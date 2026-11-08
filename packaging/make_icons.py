@@ -94,10 +94,10 @@ def build() -> Image.Image:
 def main() -> None:
     OUTPUT.mkdir(parents=True, exist_ok=True)
     icon = build()
-    icon.save(OUTPUT / "baixador-yt-1024.png")
+    icon.save(OUTPUT / "tubefetch-1024.png")
     for size in SIZES:
         resized = icon.resize((size, size), Image.LANCZOS)
-        resized.save(OUTPUT / f"baixador-yt-{size}.png")
+        resized.save(OUTPUT / f"tubefetch-{size}.png")
     print(f"Ícones gerados em {OUTPUT}")
 
 

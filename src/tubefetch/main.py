@@ -7,13 +7,13 @@ import sys
 from gi.repository import GLib
 
 from . import APP_NAME
-from .window import BaixadorApplication
+from .window import TubeFetchApplication
 
 
 def main(argv=None) -> int:
-    GLib.set_prgname("baixador-yt")
+    GLib.set_prgname("tubefetch")
     GLib.set_application_name(APP_NAME)
-    application = BaixadorApplication()
+    application = TubeFetchApplication()
     return application.run(argv if argv is not None else sys.argv)
 
 

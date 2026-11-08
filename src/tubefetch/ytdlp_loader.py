@@ -2,9 +2,9 @@
 
 Ordem de preferência:
 
-1. ``BAIXADOR_YT_VENDOR`` (variável de ambiente, útil para testes);
-2. ``~/.local/share/baixador-yt/vendor`` (versão atualizada pelo usuário);
-3. ``/usr/lib/baixador-yt/vendor`` (versão embutida no pacote .deb);
+1. ``TUBEFETCH_VENDOR`` (variável de ambiente, útil para testes);
+2. ``~/.local/share/tubefetch/vendor`` (versão atualizada pelo usuário);
+3. ``/usr/lib/tubefetch/vendor`` (versão embutida no pacote .deb);
 4. ``vendor/`` ao lado do código-fonte (execução em modo de desenvolvimento);
 5. yt-dlp instalado no sistema.
 """
@@ -18,17 +18,17 @@ from pathlib import Path
 
 
 def _vendor_candidates():
-    env = os.environ.get("BAIXADOR_YT_VENDOR")
+    env = os.environ.get("TUBEFETCH_VENDOR")
     if env:
         yield Path(env).expanduser()
-    yield Path.home() / ".local" / "share" / "baixador-yt" / "vendor"
-    yield Path("/usr/lib/baixador-yt/vendor")
+    yield Path.home() / ".local" / "share" / "tubefetch" / "vendor"
+    yield Path("/usr/lib/tubefetch/vendor")
     yield Path(__file__).resolve().parent.parent.parent / "vendor"
 
 
 def _qjs_candidates():
-    yield Path.home() / ".local" / "share" / "baixador-yt" / "bin" / "qjs"
-    yield Path("/usr/lib/baixador-yt/bin/qjs")
+    yield Path.home() / ".local" / "share" / "tubefetch" / "bin" / "qjs"
+    yield Path("/usr/lib/tubefetch/bin/qjs")
     yield Path(__file__).resolve().parent.parent.parent / "data" / "bin" / "qjs"
     system = shutil.which("qjs")
     if system:
@@ -61,10 +61,10 @@ import yt_dlp  # noqa: E402  (precisa vir depois do ajuste do sys.path)
 YTDLP_VERSION: str = yt_dlp.version.__version__
 
 if _VENDOR_PATH:
-    user_vendor = str(Path.home() / ".local" / "share" / "baixador-yt" / "vendor")
+    user_vendor = str(Path.home() / ".local" / "share" / "tubefetch" / "vendor")
     if _VENDOR_PATH == user_vendor:
         YTDLP_ORIGIN = "atualizado pelo usuário"
-    elif _VENDOR_PATH.startswith("/usr/lib/baixador-yt"):
+    elif _VENDOR_PATH.startswith("/usr/lib/tubefetch"):
         YTDLP_ORIGIN = "embutido no aplicativo"
     else:
         YTDLP_ORIGIN = "modo de desenvolvimento"

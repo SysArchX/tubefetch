@@ -9,4 +9,4 @@ if [ ! -f vendor/yt_dlp/__init__.py ] || [ ! -x data/bin/qjs ]; then
 fi
 
 export PYTHONPATH="$PWD/src${PYTHONPATH:+:$PYTHONPATH}"
-exec python3 -m baixador_yt "$@"
+exec python3 -m tubefetch "$@"

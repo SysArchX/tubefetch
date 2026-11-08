@@ -1,11 +1,11 @@
-# Baixador de Playlist
+# TubeFetch
 
 Interface gráfica simples, em português, para baixar **vídeos (MP4)** e
 **músicas (MP3)** de links e playlists do YouTube, usando
 [yt-dlp](https://github.com/yt-dlp/yt-dlp).
 
 <p align="center">
-  <img src="data/icons/baixador-yt-256.png" width="160" alt="Ícone do Baixador de Playlist">
+  <img src="data/icons/tubefetch-256.png" width="160" alt="Ícone do TubeFetch">
 </p>
 
 ## Recursos
@@ -40,21 +40,24 @@ Baixe o pacote mais recente na página de
 [releases](../../releases) e instale com:
 
 ```bash
-sudo apt install ./baixador-yt_1.0.0_amd64.deb
+sudo apt install ./tubefetch_1.1.0_amd64.deb
 ```
 
 O `apt` instala automaticamente as dependências. Depois, procure por
-**Baixador de Playlist** no menu de aplicativos ou execute:
+**TubeFetch** no menu de aplicativos ou execute:
 
 ```bash
-baixador-yt
+tubefetch
 ```
 
 Para remover:
 
 ```bash
-sudo apt remove baixador-yt
+sudo apt remove tubefetch
 ```
+
+> **Atualizando da versão antiga:** se você instalou o antigo
+> `baixador-yt`, remova-o antes com `sudo apt remove baixador-yt`.
 
 ## Executar sem instalar
 
@@ -63,8 +66,8 @@ Basta ter as dependências do sistema instaladas. Na primeira execução, o
 `data/bin/`:
 
 ```bash
-git clone https://github.com/SysArchX/baixador-yt.git
-cd baixador-yt
+git clone https://github.com/SysArchX/tubefetch.git
+cd tubefetch
 ./run.sh
 ```
 
@@ -84,20 +87,20 @@ O script:
 
 1. baixa o yt-dlp e o QuickJS-ng, se ainda não estiverem presentes;
 2. monta a estrutura do pacote e gera
-   `dist/baixador-yt_<versão>_<arquitetura>.deb`.
+   `dist/tubefetch_<versão>_<arquitetura>.deb`.
 
 ## Estrutura
 
 ```
-baixador-yt/
-├── src/baixador_yt/
+tubefetch/
+├── src/tubefetch/
 │   ├── downloader.py     # integração com o yt-dlp
 │   ├── window.py         # interface GTK3
 │   ├── ytdlp_loader.py   # seleção do yt-dlp/QuickJS
 │   └── main.py           # ponto de entrada
 ├── data/
-│   ├── com.lazlabs.BaixadorYT.desktop
-│   ├── baixador-yt.svg
+│   ├── com.lazlabs.TubeFetch.desktop
+│   ├── tubefetch.svg
 │   ├── bin/qjs           # QuickJS-ng (baixado por fetch-deps.sh)
 │   └── icons/
 ├── vendor/               # yt-dlp embutido (baixado por fetch-deps.sh)
@@ -112,7 +115,7 @@ baixador-yt/
 ## Atualizar o yt-dlp
 
 No menu do aplicativo, escolha **Atualizar yt-dlp**. A versão nova é instalada
-em `~/.local/share/baixador-yt/vendor` e passa a ter prioridade sobre a versão
+em `~/.local/share/tubefetch/vendor` e passa a ter prioridade sobre a versão
 embutida. Reinicie o aplicativo quando solicitado.
 
 ## Observações

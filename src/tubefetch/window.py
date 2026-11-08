@@ -1,4 +1,4 @@
-"""Interface gráfica (GTK3) do Baixador de Playlist."""
+"""Interface gráfica (GTK3) do TubeFetch."""
 
 from __future__ import annotations
 
@@ -6,6 +6,7 @@ import glob
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
 import threading
@@ -23,8 +24,9 @@ from . import APP_DESCRIPTION, APP_ID, APP_NAME, APP_VERSION  # noqa: E402
 from .downloader import DownloadJob, DownloadOptions, ffmpeg_available  # noqa: E402
 from .ytdlp_loader import YTDLP_ORIGIN, YTDLP_VERSION  # noqa: E402
 
-CONFIG_DIR = Path(GLib.get_user_config_dir()) / "baixador-yt"
+CONFIG_DIR = Path(GLib.get_user_config_dir()) / "tubefetch"
 CONFIG_FILE = CONFIG_DIR / "config.json"
+LEGACY_CONFIG_FILE = Path(GLib.get_user_config_dir()) / "baixador-yt" / "config.json"
 
 VIDEO_QUALITIES = [
     ("Melhor qualidade", "best"),
@@ -78,6 +80,13 @@ def _default_download_dir() -> str:
 
 
 def _load_config() -> dict:
+    if not CONFIG_FILE.exists() and LEGACY_CONFIG_FILE.is_file():
+        # Migra as preferências da versão antiga (baixador-yt).
+        try:
+            CONFIG_DIR.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(LEGACY_CONFIG_FILE, CONFIG_FILE)
+        except OSError:
+            pass
     try:
         with open(CONFIG_FILE, encoding="utf-8") as handle:
             data = json.load(handle)
@@ -156,7 +165,7 @@ class MainWindow(Gtk.ApplicationWindow):
         self._updating_ytdlp = False
 
         self.set_title(APP_NAME)
-        self.set_icon_name("baixador-yt")
+        self.set_icon_name("tubefetch")
         self.set_default_size(780, 720)
         self.set_size_request(640, 560)
 
@@ -671,7 +680,7 @@ class MainWindow(Gtk.ApplicationWindow):
         threading.Thread(target=self._run_ytdlp_update, daemon=True).start()
 
     def _run_ytdlp_update(self) -> None:
-        target = Path(GLib.get_user_data_dir()) / "baixador-yt" / "vendor"
+        target = Path(GLib.get_user_data_dir()) / "tubefetch" / "vendor"
         target.mkdir(parents=True, exist_ok=True)
         command = [
             sys.executable,
@@ -713,7 +722,7 @@ class MainWindow(Gtk.ApplicationWindow):
             )
             return False
 
-        target = Path(GLib.get_user_data_dir()) / "baixador-yt" / "vendor"
+        target = Path(GLib.get_user_data_dir()) / "tubefetch" / "vendor"
         version = _vendor_version(target) or "mais recente"
         self.status_label.set_text(f"yt-dlp {version} instalado. Reinicie o aplicativo.")
         dialog = Gtk.MessageDialog(
@@ -737,7 +746,7 @@ class MainWindow(Gtk.ApplicationWindow):
 
     def _restart(self) -> None:
         self._save_current_config()
-        os.execv(sys.executable, [sys.executable, "-m", "baixador_yt"] + sys.argv[1:])
+        os.execv(sys.executable, [sys.executable, "-m", "tubefetch"] + sys.argv[1:])
 
     def _show_about(self, *_args) -> None:
         dialog = Gtk.AboutDialog(transient_for=self, modal=True)
@@ -749,7 +758,7 @@ class MainWindow(Gtk.ApplicationWindow):
         )
         dialog.set_license_type(Gtk.License.MIT_X11)
         dialog.set_authors(["LazLabs"])
-        dialog.set_logo_icon_name("baixador-yt")
+        dialog.set_logo_icon_name("tubefetch")
         dialog.run()
         dialog.destroy()
 
@@ -760,7 +769,7 @@ class MainWindow(Gtk.ApplicationWindow):
         try:
             notification = Gio.Notification.new(title)
             notification.set_body(body)
-            notification.set_icon(Gio.ThemedIcon.new("baixador-yt"))
+            notification.set_icon(Gio.ThemedIcon.new("tubefetch"))
             self._app.send_notification(None, notification)
         except Exception:
             pass
@@ -810,7 +819,7 @@ class MainWindow(Gtk.ApplicationWindow):
         self._save_current_config()
 
 
-class BaixadorApplication(Gtk.Application):
+class TubeFetchApplication(Gtk.Application):
     def __init__(self) -> None:
         super().__init__(
             application_id=APP_ID,

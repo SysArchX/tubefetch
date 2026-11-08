@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
-# Constrói o pacote .deb do Baixador de Playlist.
+# Constrói o pacote .deb do TubeFetch.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
-VERSION="$(PYTHONPATH="$ROOT/src" python3 -c 'import baixador_yt; print(baixador_yt.APP_VERSION)')"
+VERSION="$(PYTHONPATH="$ROOT/src" python3 -c 'import tubefetch; print(tubefetch.APP_VERSION)')"
 ARCH="$(dpkg --print-architecture)"
-PKG_NAME="baixador-yt_${VERSION}_${ARCH}"
+PKG_NAME="tubefetch_${VERSION}_${ARCH}"
 STAGE="$ROOT/build/$PKG_NAME"
 DIST="$ROOT/dist"
 
@@ -26,48 +26,48 @@ QJS="$ROOT/data/bin/qjs"
 rm -rf "$STAGE"
 mkdir -p "$STAGE/DEBIAN"
 mkdir -p "$STAGE/usr/bin"
-mkdir -p "$STAGE/usr/lib/baixador-yt"
+mkdir -p "$STAGE/usr/lib/tubefetch"
 mkdir -p "$STAGE/usr/share/applications"
-mkdir -p "$STAGE/usr/share/doc/baixador-yt"
+mkdir -p "$STAGE/usr/share/doc/tubefetch"
 
-cp -a "$ROOT/src/baixador_yt" "$STAGE/usr/lib/baixador-yt/"
-find "$STAGE/usr/lib/baixador-yt" -type d -name "__pycache__" -prune -exec rm -rf {} +
-find "$STAGE/usr/lib/baixador-yt" -type f -name "*.pyc" -delete
+cp -a "$ROOT/src/tubefetch" "$STAGE/usr/lib/tubefetch/"
+find "$STAGE/usr/lib/tubefetch" -type d -name "__pycache__" -prune -exec rm -rf {} +
+find "$STAGE/usr/lib/tubefetch" -type f -name "*.pyc" -delete
 
-cp -a "$ROOT/vendor" "$STAGE/usr/lib/baixador-yt/vendor"
-find "$STAGE/usr/lib/baixador-yt/vendor" -type d -name "__pycache__" -prune -exec rm -rf {} +
-find "$STAGE/usr/lib/baixador-yt/vendor" -type f -name "*.pyc" -delete
+cp -a "$ROOT/vendor" "$STAGE/usr/lib/tubefetch/vendor"
+find "$STAGE/usr/lib/tubefetch/vendor" -type d -name "__pycache__" -prune -exec rm -rf {} +
+find "$STAGE/usr/lib/tubefetch/vendor" -type f -name "*.pyc" -delete
 
-install -Dm755 "$QJS" "$STAGE/usr/lib/baixador-yt/bin/qjs"
+install -Dm755 "$QJS" "$STAGE/usr/lib/tubefetch/bin/qjs"
 
-cat > "$STAGE/usr/bin/baixador-yt" <<'LAUNCHER'
+cat > "$STAGE/usr/bin/tubefetch" <<'LAUNCHER'
 #!/bin/sh
-export PYTHONPATH="/usr/lib/baixador-yt${PYTHONPATH:+:$PYTHONPATH}"
-exec python3 -m baixador_yt "$@"
+export PYTHONPATH="/usr/lib/tubefetch${PYTHONPATH:+:$PYTHONPATH}"
+exec python3 -m tubefetch "$@"
 LAUNCHER
-chmod 755 "$STAGE/usr/bin/baixador-yt"
+chmod 755 "$STAGE/usr/bin/tubefetch"
 
-install -Dm644 "$ROOT/data/com.lazlabs.BaixadorYT.desktop" \
-    "$STAGE/usr/share/applications/com.lazlabs.BaixadorYT.desktop"
+install -Dm644 "$ROOT/data/com.lazlabs.TubeFetch.desktop" \
+    "$STAGE/usr/share/applications/com.lazlabs.TubeFetch.desktop"
 
 for SIZE in 16 24 32 48 64 128 256 512; do
-    ICON="$ROOT/data/icons/baixador-yt-${SIZE}.png"
+    ICON="$ROOT/data/icons/tubefetch-${SIZE}.png"
     if [ -f "$ICON" ]; then
         install -Dm644 "$ICON" \
-            "$STAGE/usr/share/icons/hicolor/${SIZE}x${SIZE}/apps/baixador-yt.png"
+            "$STAGE/usr/share/icons/hicolor/${SIZE}x${SIZE}/apps/tubefetch.png"
     fi
 done
-install -Dm644 "$ROOT/data/baixador-yt.svg" \
-    "$STAGE/usr/share/icons/hicolor/scalable/apps/baixador-yt.svg"
+install -Dm644 "$ROOT/data/tubefetch.svg" \
+    "$STAGE/usr/share/icons/hicolor/scalable/apps/tubefetch.svg"
 
-install -Dm644 "$ROOT/README.md" "$STAGE/usr/share/doc/baixador-yt/README.md"
+install -Dm644 "$ROOT/README.md" "$STAGE/usr/share/doc/tubefetch/README.md"
 install -Dm644 "$ROOT/vendor/yt_dlp-2026.10.26.dist-info/licenses/LICENSE" \
-    "$STAGE/usr/share/doc/baixador-yt/copyright-yt-dlp" 2>/dev/null || true
+    "$STAGE/usr/share/doc/tubefetch/copyright-yt-dlp" 2>/dev/null || true
 
 # Permissões consistentes (arquivos 644; executáveis 755)
 find "$STAGE/usr" -type d -exec chmod 755 {} +
 find "$STAGE/usr" -type f -exec chmod 644 {} +
-chmod 755 "$STAGE/usr/bin/baixador-yt" "$STAGE/usr/lib/baixador-yt/bin/qjs"
+chmod 755 "$STAGE/usr/bin/tubefetch" "$STAGE/usr/lib/tubefetch/bin/qjs"
 
 # ----------------------------------------------------------------------
 # Controle do pacote
@@ -75,7 +75,7 @@ chmod 755 "$STAGE/usr/bin/baixador-yt" "$STAGE/usr/lib/baixador-yt/bin/qjs"
 INSTALLED_SIZE="$(du -sk --exclude=DEBIAN "$STAGE" | cut -f1)"
 
 cat > "$STAGE/DEBIAN/control" <<EOF
-Package: baixador-yt
+Package: tubefetch
 Version: $VERSION
 Section: video
 Priority: optional
