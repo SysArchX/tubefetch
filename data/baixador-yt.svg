@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ff4d5e"/>
+      <stop offset="1" stop-color="#c4122f"/>
+    </linearGradient>
+    <clipPath id="round">
+      <rect x="0" y="0" width="1024" height="1024" rx="224"/>
+    </clipPath>
+  </defs>
+  <g clip-path="url(#round)">
+    <rect x="0" y="0" width="1024" height="1024" fill="url(#bg)"/>
+    <ellipse cx="512" cy="0" rx="732" ry="520" fill="#ffffff" opacity="0.15"/>
+    <path d="M452 260 h120 v260 h130 L512 728 322 520 h130 z" fill="#ffffff"/>
+    <path d="M300 690 v110 h424 V690" fill="none" stroke="#ffffff" stroke-width="52"
+          stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+</svg>

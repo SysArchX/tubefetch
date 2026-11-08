@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Name=Baixador de Playlist
+GenericName=Baixador de vídeos e músicas
+Comment=Baixe vídeos e músicas de links e playlists do YouTube
+Exec=baixador-yt %U
+Icon=baixador-yt
+Terminal=false
+Categories=AudioVideo;Audio;Video;
+Keywords=youtube;download;baixar;playlist;video;music;musica;mp3;mp4;yt-dlp;
+StartupNotify=true
+StartupWMClass=baixador-yt

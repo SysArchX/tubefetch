@@ -1,0 +1,22 @@
+# Artefatos de build
+/build/
+/dist/
+
+# Dependências embutidas (baixadas por packaging/fetch-deps.sh)
+/vendor/
+/data/bin/qjs
+
+# Bytecode Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# Ambiente virtual
+.venv/
+venv/
+
+# Editores / sistema
+.vscode/
+.idea/
+*.swp
+.DS_Store
