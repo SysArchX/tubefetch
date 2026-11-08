@@ -1,22 +1,5 @@
-# Artefatos de build
-/build/
-/dist/
+# Android debug APK added for release downloads
+TubeFetchAndroid/TubeFetchAndroid-debug-1.0.0.apk
 
-# Dependências embutidas (baixadas por packaging/fetch-deps.sh)
-/vendor/
-/data/bin/qjs
-
-# Bytecode Python
-__pycache__/
-*.py[cod]
-*.egg-info/
-
-# Ambiente virtual
-.venv/
-venv/
-
-# Editores / sistema
-.vscode/
-.idea/
-*.swp
-.DS_Store
+# Build artifacts (APK builds, manifests, etc) — ignored for clarity of release assets
+build/app/outputs/
