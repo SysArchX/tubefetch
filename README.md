@@ -59,6 +59,30 @@ sudo apt remove tubefetch
 > **Atualizando da versão antiga:** se você instalou o antigo
 > `baixador-yt`, remova-o antes com `sudo apt remove baixador-yt`.
 
+## Downloads
+
+Baixe os artefatos construídos para este projeto.
+
+### Android
+
+O APK do aplicativo Android está disponível em:
+
+- `TubeFetchAndroid/TubeFetchAndroid-debug-1.0.0.apk`
+
+Ele pode ser instalado em dispositivos Android com:
+
+```bash
+adb install TubeFetchAndroid/TubeFetchAndroid-debug-1.0.0.apk
+```
+
+ou transferido diretamente para o celular e aberto como APK desconhecido.
+
+### Linux
+
+O pacote `.deb` para Linux x86_64 está em:
+
+- `dist/tubefetch_1.1.0_amd64.deb`
+
 ## Executar sem instalar
 
 Basta ter as dependências do sistema instaladas. Na primeira execução, o
