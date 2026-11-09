@@ -65,14 +65,15 @@ Baixe os artefatos construídos para este projeto.
 
 ### Android
 
-O APK do aplicativo Android está disponível em:
+O APK do aplicativo Android está disponível na página de
+[releases](../../releases):
 
-- `TubeFetchAndroid/TubeFetchAndroid-debug-1.0.0.apk`
+- [TubeFetch-1.0.0-android.apk](../../releases/download/v1.1.0/TubeFetch-1.0.0-android.apk)
 
 Ele pode ser instalado em dispositivos Android com:
 
 ```bash
-adb install TubeFetchAndroid/TubeFetchAndroid-debug-1.0.0.apk
+adb install TubeFetch-1.0.0-android.apk
 ```
 
 ou transferido diretamente para o celular e aberto como APK desconhecido.
@@ -81,7 +82,7 @@ ou transferido diretamente para o celular e aberto como APK desconhecido.
 
 O pacote `.deb` para Linux x86_64 está em:
 
-- `dist/tubefetch_1.1.0_amd64.deb`
+- [tubefetch_1.1.0_amd64.deb](../../releases/download/v1.1.0/tubefetch_1.1.0_amd64.deb)
 
 ## Executar sem instalar
 
