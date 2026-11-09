@@ -39,7 +39,8 @@ Todas as versões ficam na página de **[Releases](../../releases)**.
 
 ### Verificação de integridade
 
-Cada release inclui um arquivo `SHA256SUMS`. Para conferir os downloads:
+A release atual inclui um arquivo `SHA256SUMS` com os hashes dos artefatos.
+Para conferir os downloads:
 
 ```bash
 wget https://github.com/SysArchX/tubefetch/releases/download/v1.2.0/SHA256SUMS
