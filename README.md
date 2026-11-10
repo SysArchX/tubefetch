@@ -1,6 +1,6 @@
 # TubeFetch
 
-**Baixe vídeos (MP4) e músicas (MP3) do YouTube em português — no Android e no Linux.**
+**Baixe vídeos (MP4) e músicas (MP3) do YouTube e de qualquer site, além de qualquer arquivo — no Android e no Linux.**
 
 <p align="center">
   <img src="data/icons/tubefetch-256.png" width="160" alt="Ícone do TubeFetch">
@@ -20,11 +20,12 @@
   <img alt="Linux x86_64" src="https://img.shields.io/badge/Linux-x86__64-fcc624?logo=linux&logoColor=black">
 </p>
 
-O **TubeFetch** é um aplicativo livre para baixar vídeos e músicas do YouTube.
+O **TubeFetch** é um aplicativo livre para baixar vídeos, músicas e arquivos.
 Há duas versões:
 
-- **Android** — navegador integrado que detecta vídeos e links de mídia e
-  baixa em MP4 (360p a 4K) ou MP3 (192 kbps).
+- **Android** — navegador completo que pode ser definido como navegador padrão,
+  baixa **qualquer arquivo** (inclusive links do LocalSend) e detecta vídeos e
+  áudios de qualquer site, incluindo transmissões HLS/DASH.
 - **Linux (GTK 3)** — interface simples para baixar de links e playlists
   completas usando o [yt-dlp](https://github.com/yt-dlp/yt-dlp) embutido.
 
@@ -32,8 +33,8 @@ Há duas versões:
 
 | Plataforma | Versão | Arquivo | Requisitos |
 | --- | :---: | --- | --- |
-| **Android** | 1.2.0 | [`TubeFetch-1.2.0-android.apk`](https://github.com/SysArchX/tubefetch/releases/download/v1.2.0/TubeFetch-1.2.0-android.apk) | Android 7.0 (API 24) ou superior |
-| **Linux x86_64** | 1.1.0 | [`tubefetch_1.1.0_amd64.deb`](https://github.com/SysArchX/tubefetch/releases/download/v1.2.0/tubefetch_1.1.0_amd64.deb) | Debian/Ubuntu com Python 3.11+, GTK 3 e ffmpeg |
+| **Android** | 1.3.0 | [`TubeFetch-1.3.0-android.apk`](https://github.com/SysArchX/tubefetch/releases/download/v1.3.0/TubeFetch-1.3.0-android.apk) | Android 7.0 (API 24) ou superior |
+| **Linux x86_64** | 1.1.0 | [`tubefetch_1.1.0_amd64.deb`](https://github.com/SysArchX/tubefetch/releases/download/v1.3.0/tubefetch_1.1.0_amd64.deb) | Debian/Ubuntu com Python 3.11+, GTK 3 e ffmpeg |
 
 Todas as versões ficam na página de **[Releases](../../releases)**.
 
@@ -43,13 +44,13 @@ A release atual inclui um arquivo `SHA256SUMS` com os hashes dos artefatos.
 Para conferir os downloads:
 
 ```bash
-wget https://github.com/SysArchX/tubefetch/releases/download/v1.2.0/SHA256SUMS
+wget https://github.com/SysArchX/tubefetch/releases/download/v1.3.0/SHA256SUMS
 sha256sum -c SHA256SUMS
 ```
 
 ## Instalação no Android
 
-1. Baixe o `TubeFetch-1.2.0-android.apk` no celular.
+1. Baixe o `TubeFetch-1.3.0-android.apk` no celular.
 2. Abra o arquivo e permita a instalação de **fontes desconhecidas** para o
    navegador ou gerenciador de arquivos usado.
 3. No Android 11 ou superior, conceda a permissão de **acesso a arquivos**
@@ -58,7 +59,7 @@ sha256sum -c SHA256SUMS
 Também é possível instalar pelo ADB:
 
 ```bash
-adb install TubeFetch-1.2.0-android.apk
+adb install TubeFetch-1.3.0-android.apk
 ```
 
 O APK é assinado com a chave de release do projeto:
@@ -70,7 +71,9 @@ SHA-256 do certificado: c4ff9e0318a5d17a15ed67d3d2025f7752ea97e06da61201dde5ef44
 
 > **Atualizando de uma versão anterior:** o APK 1.0.0 usava uma assinatura de
 > depuração diferente. Se ele estiver instalado, desinstale-o antes de instalar
-> esta versão.
+> esta versão. As versões 1.2.0 e 1.3.0 usam a mesma chave e podem ser
+> atualizadas normalmente.
+
 
 ## Instalação no Linux (.deb)
 
@@ -99,13 +102,24 @@ sudo apt remove tubefetch
 
 ## Recursos
 
-### Android (1.2.0)
+### Android (1.3.0)
 
-- Navegador integrado no estilo Chrome, com histórico, downloads e
-  configurações no menu.
+- Navegador completo com histórico, downloads e configurações no menu.
+- Pode ser definido como **navegador padrão** do Android (links http/https).
+- Download de **qualquer arquivo**: APK, ZIP, PDF, documentos, imagens e
+  links do **LocalSend** (inclusive HTTPS com certificado local).
 - Detecção automática de vídeos do YouTube e de mídia em qualquer site.
-- Download em **MP3 (192 kbps)** ou **MP4 de 360p a 4K**.
-- Tela de downloads com progresso em tempo real, velocidade e cancelamento.
+- Download em **MP3 (192 kbps)** ou **MP4 de 360p a 4K** no YouTube.
+- Download de vídeo/áudio de **qualquer site**: MP4, WEBM, MKV, MP3, M4A,
+  além de transmissões **HLS (`.m3u8`)** e **DASH (`.mpd`)** processadas
+  pelo FFmpeg.
+- Menu **Mídia da página** para escolher o vídeo ou áudio detectado.
+- Tela de downloads com **progresso em tempo real**, tamanho, velocidade e
+  cancelamento — sem ficar carregando para sempre.
+- Pastas organizadas automaticamente:
+  - `Download/TubeFetch` — outros arquivos;
+  - `Download/TubeFetch/TubeFetch_videos` — vídeos;
+  - `Download/TubeFetch/TubeFetch_music` — músicas e áudios.
 - Detecção de link copiado na área de transferência.
 - Temas claro, escuro ou do sistema, com várias cores de destaque.
 - Histórico de navegação e de downloads.
