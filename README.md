@@ -33,10 +33,17 @@ Há duas versões:
 
 | Plataforma | Versão | Arquivo | Requisitos |
 | --- | :---: | --- | --- |
-| **Android** | 1.3.0 | [`TubeFetch-1.3.0-android.apk`](https://github.com/SysArchX/tubefetch/releases/download/v1.3.0/TubeFetch-1.3.0-android.apk) | Android 7.0 (API 24) ou superior |
+| **Android** | 1.3.0 | [`TubeFetch-1.3.0-arm64-v8a.apk`](https://github.com/SysArchX/tubefetch/releases/download/v1.3.0/TubeFetch-1.3.0-arm64-v8a.apk) (23 MB) | Android 7.0 (API 24)+, celular 64 bits — **recomendado** |
+| **Android** | 1.3.0 | [`TubeFetch-1.3.0-armeabi-v7a.apk`](https://github.com/SysArchX/tubefetch/releases/download/v1.3.0/TubeFetch-1.3.0-armeabi-v7a.apk) (36 MB) | Android 7.0+, aparelho 32 bits |
+| **Android** | 1.3.0 | [`TubeFetch-1.3.0-android.apk`](https://github.com/SysArchX/tubefetch/releases/download/v1.3.0/TubeFetch-1.3.0-android.apk) (81 MB) | Android 7.0+, serve em qualquer aparelho |
 | **Linux x86_64** | 1.1.0 | [`tubefetch_1.1.0_amd64.deb`](https://github.com/SysArchX/tubefetch/releases/download/v1.3.0/tubefetch_1.1.0_amd64.deb) | Debian/Ubuntu com Python 3.11+, GTK 3 e ffmpeg |
 
 Todas as versões ficam na página de **[Releases](../../releases)**.
+
+> Os três APKs são a **mesma versão 1.3.0**. Os arquivos por arquitetura
+> (`arm64-v8a`, `armeabi-v7a`) têm só as bibliotecas nativas do aparelho, então
+> baixam muito mais rápido e instalam sem erro de pacote. Em dúvida, use o
+> `TubeFetch-1.3.0-android.apk`.
 
 ### Verificação de integridade
 
@@ -50,16 +57,24 @@ sha256sum -c SHA256SUMS
 
 ## Instalação no Android
 
-1. Baixe o `TubeFetch-1.3.0-android.apk` no celular.
+1. Baixe o APK no celular — prefira o `TubeFetch-1.3.0-arm64-v8a.apk` (23 MB).
+   Baixe pelo **Chrome** ou por um gerenciador de downloads: navegadores
+   internos de apps de mensagem costumam cortar arquivos grandes.
 2. Abra o arquivo e permita a instalação de **fontes desconhecidas** para o
    navegador ou gerenciador de arquivos usado.
 3. No Android 11 ou superior, conceda a permissão de **acesso a arquivos**
    para que os downloads sejam salvos em `Download/TubeFetch/`.
 
+Se aparecer **“houve um problema ao analisar o pacote”**:
+
+- o download ficou incompleto — baixe de novo e confira o `SHA256SUMS`;
+- o aparelho é Android 6.x ou anterior — o TubeFetch exige Android 7.0+;
+- o APK é de outra arquitetura — tente o `TubeFetch-1.3.0-android.apk`.
+
 Também é possível instalar pelo ADB:
 
 ```bash
-adb install TubeFetch-1.3.0-android.apk
+adb install TubeFetch-1.3.0-arm64-v8a.apk
 ```
 
 O APK é assinado com a chave de release do projeto:
