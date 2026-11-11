@@ -12,12 +12,14 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:ui' as ui;
 
 import 'package:dio/dio.dart';
 import 'package:dio/io.dart';
 import 'package:ffmpeg_kit_flutter_new_full/ffmpeg_kit.dart';
 import 'package:ffmpeg_kit_flutter_new_full/ffprobe_kit.dart';
 import 'package:ffmpeg_kit_flutter_new_full/return_code.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
@@ -2930,6 +2932,8 @@ class _BrowserScreenState extends State<BrowserScreen>
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
 
+    if (Platform.isIOS) return _buildIosScaffold(scheme);
+
     return Scaffold(
       body: SafeArea(
         bottom: false,
@@ -2943,112 +2947,353 @@ class _BrowserScreenState extends State<BrowserScreen>
                 color: scheme.primary,
                 backgroundColor: scheme.primary.withValues(alpha: 0.15),
               ),
-            Expanded(
-              child: InAppWebView(
-                initialUrlRequest: URLRequest(
-                  url: WebUri(_pendingIntentUrl ?? kHomeUrl),
-                ),
-                initialSettings: InAppWebViewSettings(
-                  javaScriptEnabled: true,
-                  javaScriptCanOpenWindowsAutomatically: true,
-                  domStorageEnabled: true,
-                  databaseEnabled: true,
-                  cacheEnabled: true,
-                  useShouldOverrideUrlLoading: true,
-                  useOnDownloadStart: true,
-                  mediaPlaybackRequiresUserGesture: false,
-                  supportMultipleWindows: false,
-                  allowFileAccess: true,
-                  allowContentAccess: true,
-                  thirdPartyCookiesEnabled: true,
-                  sharedCookiesEnabled: true,
-                  mixedContentMode:
-                      MixedContentMode.MIXED_CONTENT_COMPATIBILITY_MODE,
-                ),
-                onWebViewCreated: (controller) {
-                  _controller = controller;
-                  controller.addJavaScriptHandler(
-                    handlerName: 'TubeFetchBridge',
-                    callback: (args) {
-                      _onBridgeMessage(args);
-                      return null;
-                    },
-                  );
-                  final pending = _pendingIntentUrl;
-                  if (pending != null && pending.isNotEmpty) {
-                    _pendingIntentUrl = null;
-                    controller.loadUrl(
-                      urlRequest: URLRequest(url: WebUri(pending)),
-                    );
-                  }
-                },
-                onLoadStart: (controller, url) {
-                  if (!mounted) return;
-                  final newUrl = url?.toString() ?? '';
-                  if (newUrl.isNotEmpty) {
-                    final newHost = Uri.tryParse(newUrl)?.host ?? '';
-                    final oldHost = Uri.tryParse(_currentUrl)?.host ?? '';
-                    if (newHost != oldHost) {
-                      _sniffedMedia.clear();
-                      _jsMedia = const [];
-                      _pageMedia = const [];
-                    }
-                  }
-                  setState(() {
-                    _isLoading = true;
-                    _progress = 0;
-                    if (url != null) {
-                      _currentUrl = url.toString();
-                      if (!_focusNode.hasFocus) {
-                        _urlController.text = _currentUrl;
-                      }
-                    }
-                  });
-                },
-                onLoadStop: (controller, url) async {
-                  if (!mounted) return;
-                  setState(() {
-                    _isLoading = false;
-                    if (url != null) {
-                      _currentUrl = url.toString();
-                      if (!_focusNode.hasFocus) {
-                        _urlController.text = _currentUrl;
-                      }
-                    }
-                  });
-                  await _syncNavState();
-                  await _injectBridge();
-                },
-                onProgressChanged: (controller, progress) {
-                  if (mounted) setState(() => _progress = progress / 100);
-                },
-                onUpdateVisitedHistory: (controller, url, isReload) {
-                  if (url != null) _onPageUrl(url.toString());
-                  _syncNavState();
-                },
-                shouldOverrideUrlLoading: (controller, action) =>
-                    _shouldOverrideUrlLoading(action),
-                shouldInterceptRequest: (controller, request) async {
-                  _maybeSniffMedia(request.url.toString());
-                  return null;
-                },
-                onDownloadStartRequest: (controller, request) =>
-                    _handleDownloadRequest(request),
-                onReceivedServerTrustAuthRequest:
-                    (controller, challenge) async {
-                      final host = challenge.protectionSpace.host;
-                      return ServerTrustAuthResponse(
-                        action: isPrivateHost(host)
-                            ? ServerTrustAuthResponseAction.PROCEED
-                            : ServerTrustAuthResponseAction.CANCEL,
-                      );
-                    },
-              ),
-            ),
+            Expanded(child: _buildWebView()),
           ],
         ),
       ),
     );
+  }
+
+  /// WebView compartilhada pelos layouts Android e iOS.
+  Widget _buildWebView() {
+    return InAppWebView(
+      initialUrlRequest: URLRequest(url: WebUri(_pendingIntentUrl ?? kHomeUrl)),
+      initialSettings: InAppWebViewSettings(
+        javaScriptEnabled: true,
+        javaScriptCanOpenWindowsAutomatically: true,
+        domStorageEnabled: true,
+        databaseEnabled: true,
+        cacheEnabled: true,
+        useShouldOverrideUrlLoading: true,
+        useOnDownloadStart: true,
+        mediaPlaybackRequiresUserGesture: false,
+        supportMultipleWindows: false,
+        allowFileAccess: true,
+        allowContentAccess: true,
+        thirdPartyCookiesEnabled: true,
+        sharedCookiesEnabled: true,
+        mixedContentMode: MixedContentMode.MIXED_CONTENT_COMPATIBILITY_MODE,
+      ),
+      onWebViewCreated: (controller) {
+        _controller = controller;
+        controller.addJavaScriptHandler(
+          handlerName: 'TubeFetchBridge',
+          callback: (args) {
+            _onBridgeMessage(args);
+            return null;
+          },
+        );
+        final pending = _pendingIntentUrl;
+        if (pending != null && pending.isNotEmpty) {
+          _pendingIntentUrl = null;
+          controller.loadUrl(urlRequest: URLRequest(url: WebUri(pending)));
+        }
+      },
+      onLoadStart: (controller, url) {
+        if (!mounted) return;
+        final newUrl = url?.toString() ?? '';
+        if (newUrl.isNotEmpty) {
+          final newHost = Uri.tryParse(newUrl)?.host ?? '';
+          final oldHost = Uri.tryParse(_currentUrl)?.host ?? '';
+          if (newHost != oldHost) {
+            _sniffedMedia.clear();
+            _jsMedia = const [];
+            _pageMedia = const [];
+          }
+        }
+        setState(() {
+          _isLoading = true;
+          _progress = 0;
+          if (url != null) {
+            _currentUrl = url.toString();
+            if (!_focusNode.hasFocus) {
+              _urlController.text = _currentUrl;
+            }
+          }
+        });
+      },
+      onLoadStop: (controller, url) async {
+        if (!mounted) return;
+        setState(() {
+          _isLoading = false;
+          if (url != null) {
+            _currentUrl = url.toString();
+            if (!_focusNode.hasFocus) {
+              _urlController.text = _currentUrl;
+            }
+          }
+        });
+        await _syncNavState();
+        await _injectBridge();
+      },
+      onProgressChanged: (controller, progress) {
+        if (mounted) setState(() => _progress = progress / 100);
+      },
+      onUpdateVisitedHistory: (controller, url, isReload) {
+        if (url != null) _onPageUrl(url.toString());
+        _syncNavState();
+      },
+      shouldOverrideUrlLoading: (controller, action) =>
+          _shouldOverrideUrlLoading(action),
+      shouldInterceptRequest: (controller, request) async {
+        _maybeSniffMedia(request.url.toString());
+        return null;
+      },
+      onDownloadStartRequest: (controller, request) =>
+          _handleDownloadRequest(request),
+      onReceivedServerTrustAuthRequest: (controller, challenge) async {
+        final host = challenge.protectionSpace.host;
+        return ServerTrustAuthResponse(
+          action: isPrivateHost(host)
+              ? ServerTrustAuthResponseAction.PROCEED
+              : ServerTrustAuthResponseAction.CANCEL,
+        );
+      },
+    );
+  }
+
+  // --- Chrome estilo Safari / Liquid Glass (iOS) ----------------------------
+
+  Widget _buildIosScaffold(ColorScheme scheme) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Scaffold(
+      backgroundColor: isDark
+          ? const Color(0xFF000000)
+          : const Color(0xFFFFFFFF),
+      body: SafeArea(
+        bottom: false,
+        child: Column(
+          children: [
+            SizedBox(
+              height: 2,
+              child: _isLoading
+                  ? LinearProgressIndicator(
+                      value: _progress > 0 && _progress < 1 ? _progress : null,
+                      minHeight: 2,
+                      color: scheme.primary,
+                      backgroundColor: Colors.transparent,
+                    )
+                  : null,
+            ),
+            Expanded(child: _buildWebView()),
+            SafeArea(top: false, child: _buildIosChrome(scheme, isDark)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildIosChrome(ColorScheme scheme, bool isDark) {
+    final tint = (isDark ? const Color(0xFF1C1C1E) : const Color(0xFFF7F7F8))
+        .withValues(alpha: 0.80);
+    final hairline = (isDark ? Colors.white : Colors.black).withValues(
+      alpha: 0.10,
+    );
+    return ClipRect(
+      child: BackdropFilter(
+        filter: ui.ImageFilter.blur(sigmaX: 30, sigmaY: 30),
+        child: Container(
+          decoration: BoxDecoration(
+            color: tint,
+            border: Border(top: BorderSide(color: hairline, width: 0.5)),
+          ),
+          padding: const EdgeInsets.fromLTRB(12, 8, 12, 2),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                children: [
+                  Expanded(child: _buildIosAddressPill(scheme, isDark)),
+                  const SizedBox(width: 4),
+                  _iosBarButton(
+                    icon: _isLoading
+                        ? CupertinoIcons.xmark
+                        : CupertinoIcons.arrow_clockwise,
+                    tooltip: _isLoading ? 'Parar' : 'Recarregar',
+                    onTap: () {
+                      if (_isLoading) {
+                        _controller?.stopLoading();
+                      } else {
+                        _controller?.reload();
+                      }
+                    },
+                  ),
+                ],
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  _iosBarButton(
+                    icon: CupertinoIcons.chevron_back,
+                    tooltip: 'Voltar',
+                    onTap: _canGoBack ? () => _controller?.goBack() : null,
+                  ),
+                  _iosBarButton(
+                    icon: CupertinoIcons.chevron_forward,
+                    tooltip: 'Avançar',
+                    onTap: _canGoForward
+                        ? () => _controller?.goForward()
+                        : null,
+                  ),
+                  _iosBarButton(
+                    icon: CupertinoIcons.square_arrow_up,
+                    tooltip: 'Abrir no Safari',
+                    onTap: _openInSafari,
+                  ),
+                  _iosBarButton(
+                    icon: CupertinoIcons.tray_arrow_down,
+                    tooltip: 'Downloads',
+                    onTap: () => _onMenuSelected('downloads'),
+                  ),
+                  _iosBarButton(
+                    icon: CupertinoIcons.ellipsis_circle,
+                    tooltip: 'Menu',
+                    onTap: _showIosMenu,
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildIosAddressPill(ColorScheme scheme, bool isDark) {
+    final secure = _currentUrl.startsWith('https://');
+    final showClear = _urlController.text.isNotEmpty && _focusNode.hasFocus;
+    return Container(
+      height: 38,
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      decoration: BoxDecoration(
+        color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.07),
+        borderRadius: BorderRadius.circular(19),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            secure ? CupertinoIcons.lock : CupertinoIcons.search,
+            size: 14,
+            color: scheme.onSurfaceVariant,
+          ),
+          const SizedBox(width: 6),
+          Expanded(
+            child: CupertinoTextField(
+              controller: _urlController,
+              focusNode: _focusNode,
+              placeholder: 'Pesquisar ou digitar URL',
+              placeholderStyle: TextStyle(
+                fontSize: 15,
+                color: scheme.onSurfaceVariant,
+              ),
+              style: const TextStyle(fontSize: 15),
+              padding: EdgeInsets.zero,
+              decoration: null,
+              keyboardType: TextInputType.url,
+              textInputAction: TextInputAction.go,
+              autocorrect: false,
+              enableSuggestions: false,
+              onTap: () {
+                _urlController.selection = TextSelection(
+                  baseOffset: 0,
+                  extentOffset: _urlController.text.length,
+                );
+              },
+              onSubmitted: (_) => _submitUrl(),
+              onChanged: (_) => setState(() {}),
+            ),
+          ),
+          if (showClear)
+            GestureDetector(
+              onTap: () {
+                _urlController.clear();
+                setState(() {});
+              },
+              child: Icon(
+                CupertinoIcons.xmark_circle_fill,
+                size: 16,
+                color: scheme.onSurfaceVariant,
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _iosBarButton({
+    required IconData icon,
+    required String tooltip,
+    required VoidCallback? onTap,
+  }) {
+    final enabled = onTap != null;
+    return Semantics(
+      button: true,
+      label: tooltip,
+      child: CupertinoButton(
+        padding: EdgeInsets.zero,
+        minimumSize: const Size(0, 0),
+        pressedOpacity: 0.35,
+        onPressed: onTap,
+        child: SizedBox(
+          width: 46,
+          height: 34,
+          child: Icon(
+            icon,
+            size: 22,
+            color: enabled ? null : CupertinoColors.inactiveGray,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _openInSafari() async {
+    final url = _currentUrl.isEmpty ? kHomeUrl : _currentUrl;
+    final ok = await launchUrl(
+      Uri.parse(url),
+      mode: LaunchMode.externalApplication,
+    );
+    if (!ok && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Não foi possível abrir no Safari.')),
+      );
+    }
+  }
+
+  Future<void> _showIosMenu() async {
+    final entries = <MapEntry<String, String>>[
+      if (_detectedVideoUrl != null) const MapEntry('download', 'Baixar vídeo'),
+      if (_pageMedia.isNotEmpty) const MapEntry('media', 'Mídia da página'),
+      const MapEntry('history', 'Histórico'),
+      const MapEntry('downloads', 'Downloads'),
+      const MapEntry('settings', 'Configurações'),
+      const MapEntry('home', 'Página inicial'),
+      const MapEntry('about', 'Sobre'),
+    ];
+    final host = Uri.tryParse(_currentUrl)?.host ?? '';
+    final selected = await showCupertinoModalPopup<String>(
+      context: context,
+      builder: (sheetContext) => CupertinoActionSheet(
+        title: Text(
+          host.isEmpty ? 'TubeFetch' : host,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+        actions: [
+          for (final entry in entries)
+            CupertinoActionSheetAction(
+              onPressed: () => Navigator.of(sheetContext).pop(entry.key),
+              child: Text(entry.value),
+            ),
+        ],
+        cancelButton: CupertinoActionSheetAction(
+          isDefaultAction: true,
+          onPressed: () => Navigator.of(sheetContext).pop(),
+          child: const Text('Cancelar'),
+        ),
+      ),
+    );
+    if (selected != null && mounted) _onMenuSelected(selected);
   }
 
   Widget _buildToolbar() {
