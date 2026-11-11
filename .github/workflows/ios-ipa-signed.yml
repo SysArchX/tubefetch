@@ -87,6 +87,17 @@ jobs:
           cp /tmp/profile.mobileprovision \
             ~/Library/MobileDevice/Provisioning\ Profiles/"$UUID".mobileprovision
 
+          echo "=== Profile ==="
+          /usr/libexec/PlistBuddy -c 'Print :Name' /tmp/profile.plist
+          /usr/libexec/PlistBuddy -c 'Print :TeamIdentifier:0' /tmp/profile.plist
+          /usr/libexec/PlistBuddy -c 'Print :Entitlements:application-identifier' /tmp/profile.plist
+          DEVICES=$(/usr/libexec/PlistBuddy -c 'Print :ProvisionedDevices' /tmp/profile.plist 2>/dev/null | grep -c "UDID" || true)
+          echo "UDIDs no profile: $DEVICES"
+          if [ "${{ inputs.export_method }}" = "ad-hoc" ] && [ "$DEVICES" -eq 0 ]; then
+            echo "::error::Profile de Ad Hoc sem aparelhos registrados. Cadastre o UDID do iPhone em developer.apple.com e baixe o profile de novo."
+            exit 1
+          fi
+
           echo "Identidades disponíveis:"
           security find-identity -v -p codesigning build.keychain
 
