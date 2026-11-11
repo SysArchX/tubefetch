@@ -29,7 +29,7 @@ import 'package:youtube_explode_dart/youtube_explode_dart.dart';
 
 const String kHomeUrl = 'https://www.google.com';
 const String kGitHubUrl = 'https://github.com/SysArchX/tubefetch';
-const String kAppVersion = '1.4.0';
+const String kAppVersion = '1.4.1';
 
 /// Canal nativo para receber links (navegador padrão) e abrir ajustes.
 const MethodChannel kIntentChannel = MethodChannel('tubefetch/intent');
@@ -2156,6 +2156,8 @@ class _BrowserScreenState extends State<BrowserScreen>
   DateTime _lastMediaUpdate = DateTime.fromMillisecondsSinceEpoch(0);
   final Set<String> _autoPrompted = {};
   bool _dialogOpen = false;
+  bool _mediaBannerDismissed = false;
+  Timer? _iosMediaTimer;
   String? _lastClipboardPrompt;
   String? _pendingIntentUrl;
   final Map<String, DateTime> _recentDownloads = {};
@@ -2167,6 +2169,14 @@ class _BrowserScreenState extends State<BrowserScreen>
     _lastClipboardPrompt = SettingsStore.lastClipboard;
     _urlController.text = kHomeUrl;
     _listenForIntents();
+    if (Platform.isIOS) {
+      // O WKWebView não tem shouldInterceptRequest: consultamos o DOM e o
+      // performance timing da página periodicamente para achar mídia.
+      _iosMediaTimer = Timer.periodic(
+        const Duration(seconds: 4),
+        (_) => _pullPageMedia(),
+      );
+    }
     WidgetsBinding.instance.addPostFrameCallback((_) => _checkClipboard());
   }
 
@@ -2196,6 +2206,7 @@ class _BrowserScreenState extends State<BrowserScreen>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _iosMediaTimer?.cancel();
     _urlController.dispose();
     _focusNode.dispose();
     super.dispose();
@@ -2236,6 +2247,41 @@ class _BrowserScreenState extends State<BrowserScreen>
         }
         window.__tfPost = tfPost;
 
+        // --- Detecção de rede (funciona também no iOS/WKWebView) ----------
+        // O WKWebView não expõe shouldInterceptRequest, então observamos as
+        // requisições do próprio JavaScript (fetch/XHR) e o performance timing.
+        var tfMediaRe = /\.(mp4|m4v|webm|mkv|mov|m3u8|mpd|mp3|m4a|aac|ogg|opus|flac|wav)(\?|#|$)/i;
+        window.__tfNet = window.__tfNet || [];
+        function tfNoteNet(u) {
+          try {
+            if (!u || typeof u !== 'string') return;
+            if (u.indexOf('blob:') === 0 || u.indexOf('data:') === 0) return;
+            if (!tfMediaRe.test(u)) return;
+            if (window.__tfNet.indexOf(u) === -1) window.__tfNet.push(u);
+          } catch (e) {}
+        }
+        if (!window.__tfNetHooked) {
+          window.__tfNetHooked = true;
+          try {
+            var tfOrigFetch = window.fetch;
+            if (tfOrigFetch) {
+              window.fetch = function (input) {
+                try {
+                  tfNoteNet(typeof input === 'string' ? input : (input && input.url));
+                } catch (e) {}
+                return tfOrigFetch.apply(this, arguments);
+              };
+            }
+          } catch (e) {}
+          try {
+            var tfOrigOpen = XMLHttpRequest.prototype.open;
+            XMLHttpRequest.prototype.open = function (method, url) {
+              try { tfNoteNet(String(url)); } catch (e) {}
+              return tfOrigOpen.apply(this, arguments);
+            };
+          } catch (e) {}
+        }
+
         function collectMedia() {
           var out = [], seen = {};
           function add(u) {
@@ -2253,8 +2299,21 @@ class _BrowserScreenState extends State<BrowserScreen>
               if (/\.(mp4|m4v|webm|mkv|mov|mp3|m4a|aac|wav|ogg|opus)(\?|$)/i.test(h)) add(h);
             });
           } catch (e) {}
+          try {
+            (window.__tfNet || []).forEach(add);
+          } catch (e) {}
+          try {
+            performance.getEntriesByType('resource').forEach(function (e) {
+              if (e && tfMediaRe.test(e.name || '')) add(e.name);
+            });
+          } catch (e) {}
           return out;
         }
+
+        // Usado pelo Dart como fallback quando o callHandler não responde.
+        window.__tfCollect = function () {
+          try { return JSON.stringify(collectMedia()); } catch (e) { return '[]'; }
+        };
 
         window.__tfReport = function () {
           try {
@@ -2396,6 +2455,42 @@ class _BrowserScreenState extends State<BrowserScreen>
     } catch (_) {
       // Página ainda carregando.
     }
+    await _pullPageMedia();
+  }
+
+  /// Lê a lista de mídia direto do JavaScript (fallback sem depender do
+  /// `callHandler`, que no iOS pode não responder em páginas com CSP rígida).
+  Future<void> _pullPageMedia() async {
+    final controller = _controller;
+    if (controller == null || !mounted) return;
+    try {
+      final raw = await controller.evaluateJavascript(
+        source: 'window.__tfCollect ? window.__tfCollect() : "[]"',
+      );
+      _applyJsMedia(raw);
+    } catch (_) {
+      // Página sem o bridge (ainda carregando ou domínio restrito).
+    }
+  }
+
+  void _applyJsMedia(Object? raw) {
+    dynamic data = raw;
+    if (data is String) {
+      try {
+        data = jsonDecode(data);
+      } catch (_) {
+        return;
+      }
+    }
+    if (data is! List) return;
+    final media = <String>[];
+    for (final item in data) {
+      final value = item?.toString() ?? '';
+      if (value.startsWith('http')) media.add(value);
+    }
+    if (_listEquals(media, _jsMedia)) return;
+    _jsMedia = List.unmodifiable(media);
+    _updateMediaView(force: true);
   }
 
   void _onBridgeMessage(List<dynamic> args) {
@@ -2523,6 +2618,7 @@ class _BrowserScreenState extends State<BrowserScreen>
     if (!mounted || url == _currentUrl) return;
     setState(() {
       _currentUrl = url;
+      _mediaBannerDismissed = false;
       if (!_focusNode.hasFocus) _urlController.text = url;
     });
     final youtubeUrl = canonicalYouTubeUrl(url);
@@ -2635,6 +2731,9 @@ class _BrowserScreenState extends State<BrowserScreen>
   }
 
   void _maybeAutoPrompt(String url) {
+    // No iOS usamos o banner "Vídeo detectado" (menos intrusivo e sem
+    // diálogo surgindo por cima da página a cada navegação).
+    if (Platform.isIOS) return;
     if (_dialogOpen) return;
     if (_autoPrompted.contains(url)) return;
     _autoPrompted.add(url);
@@ -2656,6 +2755,9 @@ class _BrowserScreenState extends State<BrowserScreen>
         break;
       case 'media':
         _showMediaPicker();
+        break;
+      case 'safari':
+        _openInSafari();
         break;
       case 'history':
         Navigator.of(context).push(
@@ -2947,6 +3049,7 @@ class _BrowserScreenState extends State<BrowserScreen>
                 color: scheme.primary,
                 backgroundColor: scheme.primary.withValues(alpha: 0.15),
               ),
+            if (_showMediaBanner) _buildMediaBanner(scheme),
             Expanded(child: _buildWebView()),
           ],
         ),
@@ -3000,6 +3103,7 @@ class _BrowserScreenState extends State<BrowserScreen>
             _jsMedia = const [];
             _pageMedia = const [];
           }
+          _mediaBannerDismissed = false;
         }
         setState(() {
           _isLoading = true;
@@ -3049,6 +3153,80 @@ class _BrowserScreenState extends State<BrowserScreen>
     );
   }
 
+  // --- Aviso de mídia detectada (iOS e Android) -----------------------------
+
+  bool get _showMediaBanner =>
+      !_mediaBannerDismissed &&
+      (_detectedVideoUrl != null || _pageMedia.isNotEmpty);
+
+  Widget _buildMediaBanner(ColorScheme scheme) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isYoutube = _detectedVideoUrl != null;
+    final count = _pageMedia.length;
+    final label = isYoutube
+        ? 'Vídeo do YouTube detectado'
+        : count == 1
+        ? 'Vídeo detectado nesta página'
+        : '$count mídias detectadas nesta página';
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(10, 6, 10, 0),
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(12, 4, 4, 4),
+        decoration: BoxDecoration(
+          color: scheme.primary.withValues(alpha: isDark ? 0.20 : 0.10),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: scheme.primary.withValues(alpha: 0.28),
+            width: 0.6,
+          ),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              isYoutube ? Icons.ondemand_video : Icons.movie_outlined,
+              size: 18,
+              color: scheme.primary,
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(fontSize: 13, color: scheme.onSurface),
+              ),
+            ),
+            TextButton(
+              onPressed: _downloadDetectedMedia,
+              style: TextButton.styleFrom(
+                minimumSize: const Size(0, 34),
+                padding: const EdgeInsets.symmetric(horizontal: 10),
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+              child: const Text('Baixar'),
+            ),
+            IconButton(
+              onPressed: () => setState(() => _mediaBannerDismissed = true),
+              icon: const Icon(Icons.close, size: 16),
+              visualDensity: VisualDensity.compact,
+              tooltip: 'Fechar',
+              color: scheme.onSurfaceVariant,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _downloadDetectedMedia() {
+    final youtubeUrl = _detectedVideoUrl;
+    if (youtubeUrl != null) {
+      _openDownloadDialog(youtubeUrl);
+    } else {
+      _showMediaPicker();
+    }
+  }
+
   // --- Chrome estilo Safari / Liquid Glass (iOS) ----------------------------
 
   Widget _buildIosScaffold(ColorScheme scheme) {
@@ -3073,6 +3251,7 @@ class _BrowserScreenState extends State<BrowserScreen>
                   : null,
             ),
             Expanded(child: _buildWebView()),
+            if (_showMediaBanner) _buildMediaBanner(scheme),
             SafeArea(top: false, child: _buildIosChrome(scheme, isDark)),
           ],
         ),
@@ -3128,10 +3307,37 @@ class _BrowserScreenState extends State<BrowserScreen>
                   onTap: _canGoForward ? () => _controller?.goForward() : null,
                 ),
                 Expanded(child: _buildIosAddressPill(scheme, isDark)),
-                _iosBarButton(
-                  icon: CupertinoIcons.square_arrow_up,
-                  tooltip: 'Abrir no Safari',
-                  onTap: _openInSafari,
+                ListenableBuilder(
+                  listenable: DownloadManager.instance,
+                  builder: (_, _) {
+                    final tasks = DownloadManager.instance.tasks;
+                    return Stack(
+                      clipBehavior: Clip.none,
+                      alignment: Alignment.center,
+                      children: [
+                        _iosBarButton(
+                          icon: CupertinoIcons.tray_arrow_down,
+                          tooltip: 'Downloads',
+                          onTap: () => _onMenuSelected('downloads'),
+                        ),
+                        if (tasks.isNotEmpty)
+                          Positioned(
+                            right: 7,
+                            top: 8,
+                            child: Container(
+                              width: 8,
+                              height: 8,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: DownloadManager.instance.hasActive
+                                    ? const Color(0xFFFF3B30)
+                                    : scheme.primary,
+                              ),
+                            ),
+                          ),
+                      ],
+                    );
+                  },
                 ),
                 _iosBarButton(
                   icon: CupertinoIcons.ellipsis_circle,
@@ -3269,6 +3475,7 @@ class _BrowserScreenState extends State<BrowserScreen>
     final entries = <MapEntry<String, String>>[
       if (_detectedVideoUrl != null) const MapEntry('download', 'Baixar vídeo'),
       if (_pageMedia.isNotEmpty) const MapEntry('media', 'Mídia da página'),
+      const MapEntry('safari', 'Abrir no Safari'),
       const MapEntry('history', 'Histórico'),
       const MapEntry('downloads', 'Downloads'),
       const MapEntry('settings', 'Configurações'),

@@ -2,7 +2,7 @@
 
 APP_ID = "com.lazlabs.TubeFetch"
 APP_NAME = "TubeFetch"
-APP_VERSION = "1.4.0"
+APP_VERSION = "1.4.1"
 APP_DESCRIPTION = (
     "Interface simples para baixar vídeos e músicas de links e playlists "
     "do YouTube usando o yt-dlp."

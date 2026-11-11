@@ -6,7 +6,7 @@ só existe com Xcode (não há como compilar iOS no Linux nem "converter" o APK)
 ## Gerar o .ipa
 
 1. Abra **Actions → “iOS (.ipa sem assinatura)” → Run workflow**.
-2. Espere ~5–10 min (na primeira vez o pod do FFmpeg baixa ~49 MB de frameworks).
+2. Espere ~20–40 min (o pod do FFmpeg baixa ~49 MB de frameworks).
 3. Baixe o artefato **`TubeFetch-ios-unsigned-ipa`** no fim da página da execução.
 
 O artefato traz `TubeFetch-<versao>-ios-unsigned.ipa` e o `.sha256`.
@@ -33,17 +33,6 @@ cd ios && pod install && cd ..
 flutter build ipa --release      # assinado, precisa de conta Apple
 flutter build ios --release --no-codesign   # sem assinatura, para reassinar
 ```
-
-## Assinar no CI (Ad Hoc)
-
-Com Apple Developer pago você pode gerar o `.ipa` **já assinado** sem Mac:
-
-1. Cadastre os secrets `IOS_CERT_P12`, `IOS_CERT_PASSWORD`, `IOS_PROFILE` e
-   `IOS_KEYCHAIN_PASSWORD` (Settings → Secrets and variables → Actions).
-2. Rode **Actions → “iOS (.ipa assinado)”** com `export_method = ad-hoc`,
-   `team_id`, `bundle_id` (`com.sysarchx.tubefetch`) e `profile_name`.
-3. O UDID do iPhone precisa estar registrado em developer.apple.com **antes**
-   de gerar o provisioning profile.
 
 ## O que muda no iOS em relação ao Android
 
