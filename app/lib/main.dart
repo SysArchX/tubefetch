@@ -3946,19 +3946,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             child: Column(
               children: [
-                ListTile(
-                  leading: const Icon(Icons.public),
-                  title: const Text('Definir como navegador padrão'),
-                  subtitle: const Text(
-                    'Abra os ajustes do Android e escolha o TubeFetch',
+                if (Platform.isAndroid) ...[
+                  ListTile(
+                    leading: const Icon(Icons.public),
+                    title: const Text('Definir como navegador padrão'),
+                    subtitle: const Text(
+                      'Abra os ajustes do Android e escolha o TubeFetch',
+                    ),
+                    trailing: const Icon(Icons.open_in_new, size: 18),
+                    onTap: _setDefaultBrowser,
                   ),
-                  trailing: const Icon(Icons.open_in_new, size: 18),
-                  onTap: _setDefaultBrowser,
-                ),
-                const Divider(height: 1),
-                const ListTile(
-                  leading: Icon(Icons.folder_outlined),
-                  title: Text('Pastas de downloads'),
+                  const Divider(height: 1),
+                ],
+                ListTile(
+                  leading: const Icon(Icons.folder_outlined),
+                  title: const Text('Pastas de downloads'),
                   subtitle: Text(
                     'Outros: ${AppPaths.base}\n'
                     'Vídeos: ${AppPaths.videos}\n'

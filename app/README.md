@@ -1,25 +1,17 @@
-# TubeFetch — app Flutter (Android / iOS)
+# tubefetch_app
 
-Fonte do aplicativo Flutter do TubeFetch.
+A new Flutter project.
 
-- `android/` — configuração e assinatura do APK (a keystore **não** é versionada;
-  ela fica em `android/keystore/` apenas na máquina de build).
-- `ios/` — projeto iOS (build precisa de macOS + Xcode).
-- `.github/workflows/ios-ipa.yml` — gera um `.ipa` **sem assinatura** num runner
-  macOS do GitHub Actions (Actions → "iOS (.ipa sem assinatura)" → Run workflow).
-- `third_party/flutter_inappwebview_android` — cópia local do plugin Android com
-  o patch usado pelo app.
+## Getting Started
 
-## Build Android
+This project is a starting point for a Flutter application.
 
-```bash
-flutter build apk --release --split-per-abi
-```
+A few resources to get you started if this is your first Flutter project:
 
-## Build iOS
+- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
+- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
+- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
 
-Só em macOS com Xcode:
-
-```bash
-flutter build ipa --release
-```
+For help getting started with Flutter development, view the
+[online documentation](https://docs.flutter.dev/), which offers tutorials,
+samples, guidance on mobile development, and a full API reference.
