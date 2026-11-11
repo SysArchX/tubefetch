@@ -3,3 +3,6 @@ TubeFetchAndroid/TubeFetchAndroid-debug-1.0.0.apk
 
 # Build artifacts (APK builds, manifests, etc) — ignored for clarity of release assets
 build/app/outputs/
+
+__pycache__/
+*.pyc
