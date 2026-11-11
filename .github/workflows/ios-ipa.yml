@@ -1,0 +1,78 @@
+name: iOS (.ipa sem assinatura)
+
+# Gera um .ipa do app Flutter (pasta app/) num runner macOS do GitHub Actions.
+# O .ipa sai SEM assinatura: para instalar no iPhone, reassine com o seu Apple ID
+# usando Sideloadly, AltStore, Xcode (janela Devices) ou similar.
+on:
+  workflow_dispatch:
+    inputs:
+      flutter_version:
+        description: "Versão do Flutter"
+        required: false
+        default: "3.47.9"
+      build_name:
+        description: "Nome do build (versionName)"
+        required: false
+        default: "1.3.0"
+
+concurrency:
+  group: ios-ipa-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-ipa:
+    name: Build iOS (release, no codesign)
+    runs-on: macos-latest
+    timeout-minutes: 90
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Mostrar ambiente
+        run: |
+          sw_vers
+          xcodebuild -version
+          pod --version
+
+      - name: Instalar Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ inputs.flutter_version }}
+          channel: stable
+          cache: true
+
+      - name: Dependências
+        working-directory: app
+        run: |
+          flutter --version
+          flutter pub get
+
+      - name: Build iOS (sem assinatura)
+        working-directory: app
+        run: flutter build ios --release --no-codesign
+
+      - name: Empacotar .ipa
+        working-directory: app
+        run: |
+          set -eux
+          APP="build/ios/iphoneos/Runner.app"
+          test -d "$APP"
+          VERSION="$(grep -m1 '^version:' pubspec.yaml | sed 's/version: *//; s/+.*//')"
+          NAME="TubeFetch-${VERSION}-ios-unsigned"
+          rm -rf Payload "$NAME.ipa"
+          mkdir -p Payload
+          cp -R "$APP" Payload/
+          zip -qry "$NAME.ipa" Payload
+          shasum -a 256 "$NAME.ipa" | tee "$NAME.ipa.sha256"
+          ls -lh "$NAME.ipa"
+
+      - name: Publicar artefato
+        uses: actions/upload-artifact@v4
+        with:
+          name: TubeFetch-ios-unsigned-ipa
+          path: |
+            app/TubeFetch-*-ios-unsigned.ipa
+            app/TubeFetch-*-ios-unsigned.ipa.sha256
+          if-no-files-found: error
+          retention-days: 90
