@@ -33,18 +33,18 @@ Há duas versões:
 
 | Plataforma | Versão | Arquivo | Requisitos |
 | --- | :---: | --- | --- |
-| **Android** | 1.3.0 | [`TubeFetch-1.3.0-arm64-v8a.apk`](https://github.com/SysArchX/tubefetch/releases/download/v1.3.0/TubeFetch-1.3.0-arm64-v8a.apk) (23 MB) | Android 7.0 (API 24)+, celular 64 bits — **recomendado** |
-| **Android** | 1.3.0 | [`TubeFetch-1.3.0-armeabi-v7a.apk`](https://github.com/SysArchX/tubefetch/releases/download/v1.3.0/TubeFetch-1.3.0-armeabi-v7a.apk) (36 MB) | Android 7.0+, aparelho 32 bits |
-| **Android** | 1.3.0 | [`TubeFetch-1.3.0-android.apk`](https://github.com/SysArchX/tubefetch/releases/download/v1.3.0/TubeFetch-1.3.0-android.apk) (81 MB) | Android 7.0+, serve em qualquer aparelho |
-| **Linux x86_64** | 1.1.0 | [`tubefetch_1.1.0_amd64.deb`](https://github.com/SysArchX/tubefetch/releases/download/v1.3.0/tubefetch_1.1.0_amd64.deb) | Debian/Ubuntu com Python 3.11+, GTK 3 e ffmpeg |
-| **iOS** | 1.3.0 | [`TubeFetch-1.3.0-ios-unsigned.ipa`](https://github.com/SysArchX/tubefetch/releases/download/v1.3.0/TubeFetch-1.3.0-ios-unsigned.ipa) (24 MB) | iOS/iPadOS 15+, **sem assinatura** (reassinar com seu Apple ID) |
+| **Android** | 1.4.0 | [`TubeFetch-1.4.0-arm64-v8a.apk`](https://github.com/SysArchX/tubefetch/releases/download/v1.4.0/TubeFetch-1.4.0-arm64-v8a.apk) (23 MB) | Android 7.0 (API 24)+, celular 64 bits — **recomendado** |
+| **Android** | 1.4.0 | [`TubeFetch-1.4.0-armeabi-v7a.apk`](https://github.com/SysArchX/tubefetch/releases/download/v1.4.0/TubeFetch-1.4.0-armeabi-v7a.apk) (36 MB) | Android 7.0+, aparelho 32 bits |
+| **Android** | 1.4.0 | [`TubeFetch-1.4.0-android.apk`](https://github.com/SysArchX/tubefetch/releases/download/v1.4.0/TubeFetch-1.4.0-android.apk) (81 MB) | Android 7.0+, serve em qualquer aparelho |
+| **Linux x86_64** | 1.4.0 | [`tubefetch_1.4.0_amd64.deb`](https://github.com/SysArchX/tubefetch/releases/download/v1.4.0/tubefetch_1.4.0_amd64.deb) | Debian/Ubuntu com Python 3.11+, GTK 3 e ffmpeg |
+| **iOS** | 1.4.0 | [`TubeFetch-1.4.0-ios-unsigned.ipa`](https://github.com/SysArchX/tubefetch/releases/download/v1.4.0/TubeFetch-1.4.0-ios-unsigned.ipa) (24 MB) | iOS/iPadOS 15+, **sem assinatura** (reassinar com seu Apple ID) |
 
 Todas as versões ficam na página de **[Releases](../../releases)**.
 
-> Os três APKs são a **mesma versão 1.3.0**. Os arquivos por arquitetura
+> Os três APKs são a **mesma versão 1.4.0**. Os arquivos por arquitetura
 > (`arm64-v8a`, `armeabi-v7a`) têm só as bibliotecas nativas do aparelho, então
 > baixam muito mais rápido e instalam sem erro de pacote. Em dúvida, use o
-> `TubeFetch-1.3.0-android.apk`.
+> `TubeFetch-1.4.0-android.apk`.
 
 ### Verificação de integridade
 
@@ -52,13 +52,13 @@ A release atual inclui um arquivo `SHA256SUMS` com os hashes dos artefatos.
 Para conferir os downloads:
 
 ```bash
-wget https://github.com/SysArchX/tubefetch/releases/download/v1.3.0/SHA256SUMS
+wget https://github.com/SysArchX/tubefetch/releases/download/v1.4.0/SHA256SUMS
 sha256sum -c SHA256SUMS
 ```
 
 ## Instalação no Android
 
-1. Baixe o APK no celular — prefira o `TubeFetch-1.3.0-arm64-v8a.apk` (23 MB).
+1. Baixe o APK no celular — prefira o `TubeFetch-1.4.0-arm64-v8a.apk` (23 MB).
    Baixe pelo **Chrome** ou por um gerenciador de downloads: navegadores
    internos de apps de mensagem costumam cortar arquivos grandes.
 2. Abra o arquivo e permita a instalação de **fontes desconhecidas** para o
@@ -70,12 +70,12 @@ Se aparecer **“houve um problema ao analisar o pacote”**:
 
 - o download ficou incompleto — baixe de novo e confira o `SHA256SUMS`;
 - o aparelho é Android 6.x ou anterior — o TubeFetch exige Android 7.0+;
-- o APK é de outra arquitetura — tente o `TubeFetch-1.3.0-android.apk`.
+- o APK é de outra arquitetura — tente o `TubeFetch-1.4.0-android.apk`.
 
 Também é possível instalar pelo ADB:
 
 ```bash
-adb install TubeFetch-1.3.0-arm64-v8a.apk
+adb install TubeFetch-1.4.0-arm64-v8a.apk
 ```
 
 O APK é assinado com a chave de release do projeto:
@@ -87,7 +87,7 @@ SHA-256 do certificado: c4ff9e0318a5d17a15ed67d3d2025f7752ea97e06da61201dde5ef44
 
 > **Atualizando de uma versão anterior:** o APK 1.0.0 usava uma assinatura de
 > depuração diferente. Se ele estiver instalado, desinstale-o antes de instalar
-> esta versão. As versões 1.2.0 e 1.3.0 usam a mesma chave e podem ser
+> esta versão. As versões 1.2.0 e 1.4.0 usam a mesma chave e podem ser
 > atualizadas normalmente.
 
 
@@ -106,7 +106,7 @@ em relação ao Android: [`app/IOS.md`](app/IOS.md).
 Baixe o pacote `.deb` e instale com:
 
 ```bash
-sudo apt install ./tubefetch_1.1.0_amd64.deb
+sudo apt install ./tubefetch_1.4.0_amd64.deb
 ```
 
 O `apt` resolve as dependências automaticamente. Depois, procure por
@@ -128,7 +128,7 @@ sudo apt remove tubefetch
 
 ## Recursos
 
-### Android (1.3.0)
+### Android (1.4.0)
 
 - Navegador completo com histórico, downloads e configurações no menu.
 - Pode ser definido como **navegador padrão** do Android (links http/https).
@@ -150,7 +150,7 @@ sudo apt remove tubefetch
 - Temas claro, escuro ou do sistema, com várias cores de destaque.
 - Histórico de navegação e de downloads.
 
-### Linux — GTK 3 (1.1.0)
+### Linux — GTK 3 (1.4.0)
 
 - Download de vídeo em MP4 ou áudio em MP3.
 - Escolha de qualidade (melhor disponível, 1080p, 720p, 480p, 360p; ou

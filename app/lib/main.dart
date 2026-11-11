@@ -29,7 +29,7 @@ import 'package:youtube_explode_dart/youtube_explode_dart.dart';
 
 const String kHomeUrl = 'https://www.google.com';
 const String kGitHubUrl = 'https://github.com/SysArchX/tubefetch';
-const String kAppVersion = '1.3.0';
+const String kAppVersion = '1.4.0';
 
 /// Canal nativo para receber links (navegador padrão) e abrir ajustes.
 const MethodChannel kIntentChannel = MethodChannel('tubefetch/intent');
@@ -3041,14 +3041,11 @@ class _BrowserScreenState extends State<BrowserScreen>
       },
       onDownloadStartRequest: (controller, request) =>
           _handleDownloadRequest(request),
-      onReceivedServerTrustAuthRequest: (controller, challenge) async {
-        final host = challenge.protectionSpace.host;
-        return ServerTrustAuthResponse(
-          action: isPrivateHost(host)
-              ? ServerTrustAuthResponseAction.PROCEED
-              : ServerTrustAuthResponseAction.CANCEL,
-        );
-      },
+      // NÃO registrar onReceivedServerTrustAuthRequest aqui.
+      // No WKWebView esse callback intercepta o desafio TLS de *qualquer*
+      // host: devolver CANCEL para hosts públicos cancela todo HTTPS e a
+      // página nunca carrega. Sem o callback, o WKWebView usa a validação
+      // padrão do sistema (a mesma do Safari).
     );
   }
 
@@ -3083,76 +3080,66 @@ class _BrowserScreenState extends State<BrowserScreen>
     );
   }
 
+  /// Barra inferior flutuante no estilo Safari (iOS 26 "Liquid Glass"):
+  /// cápsula de vidro com blur real, borda hairline, brilho no topo e sombra.
   Widget _buildIosChrome(ColorScheme scheme, bool isDark) {
-    final tint = (isDark ? const Color(0xFF1C1C1E) : const Color(0xFFF7F7F8))
-        .withValues(alpha: 0.80);
+    final top = (isDark ? const Color(0xFF2C2C2E) : const Color(0xFFFFFFFF))
+        .withValues(alpha: isDark ? 0.78 : 0.88);
+    final bottom = (isDark ? const Color(0xFF1C1C1E) : const Color(0xFFF2F2F7))
+        .withValues(alpha: isDark ? 0.72 : 0.76);
     final hairline = (isDark ? Colors.white : Colors.black).withValues(
-      alpha: 0.10,
+      alpha: 0.14,
     );
-    return ClipRect(
-      child: BackdropFilter(
-        filter: ui.ImageFilter.blur(sigmaX: 30, sigmaY: 30),
-        child: Container(
-          decoration: BoxDecoration(
-            color: tint,
-            border: Border(top: BorderSide(color: hairline, width: 0.5)),
-          ),
-          padding: const EdgeInsets.fromLTRB(12, 8, 12, 2),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Row(
-                children: [
-                  Expanded(child: _buildIosAddressPill(scheme, isDark)),
-                  const SizedBox(width: 4),
-                  _iosBarButton(
-                    icon: _isLoading
-                        ? CupertinoIcons.xmark
-                        : CupertinoIcons.arrow_clockwise,
-                    tooltip: _isLoading ? 'Parar' : 'Recarregar',
-                    onTap: () {
-                      if (_isLoading) {
-                        _controller?.stopLoading();
-                      } else {
-                        _controller?.reload();
-                      }
-                    },
-                  ),
-                ],
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(10, 6, 10, 8),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(28),
+        child: BackdropFilter(
+          filter: ui.ImageFilter.blur(sigmaX: 30, sigmaY: 30),
+          child: Container(
+            height: 54,
+            padding: const EdgeInsets.symmetric(horizontal: 3),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [top, bottom],
               ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  _iosBarButton(
-                    icon: CupertinoIcons.chevron_back,
-                    tooltip: 'Voltar',
-                    onTap: _canGoBack ? () => _controller?.goBack() : null,
-                  ),
-                  _iosBarButton(
-                    icon: CupertinoIcons.chevron_forward,
-                    tooltip: 'Avançar',
-                    onTap: _canGoForward
-                        ? () => _controller?.goForward()
-                        : null,
-                  ),
-                  _iosBarButton(
-                    icon: CupertinoIcons.square_arrow_up,
-                    tooltip: 'Abrir no Safari',
-                    onTap: _openInSafari,
-                  ),
-                  _iosBarButton(
-                    icon: CupertinoIcons.tray_arrow_down,
-                    tooltip: 'Downloads',
-                    onTap: () => _onMenuSelected('downloads'),
-                  ),
-                  _iosBarButton(
-                    icon: CupertinoIcons.ellipsis_circle,
-                    tooltip: 'Menu',
-                    onTap: _showIosMenu,
-                  ),
-                ],
-              ),
-            ],
+              borderRadius: BorderRadius.circular(28),
+              border: Border.all(color: hairline, width: 0.6),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: isDark ? 0.50 : 0.14),
+                  blurRadius: 20,
+                  offset: const Offset(0, 8),
+                ),
+              ],
+            ),
+            child: Row(
+              children: [
+                _iosBarButton(
+                  icon: CupertinoIcons.chevron_back,
+                  tooltip: 'Voltar',
+                  onTap: _canGoBack ? () => _controller?.goBack() : null,
+                ),
+                _iosBarButton(
+                  icon: CupertinoIcons.chevron_forward,
+                  tooltip: 'Avançar',
+                  onTap: _canGoForward ? () => _controller?.goForward() : null,
+                ),
+                Expanded(child: _buildIosAddressPill(scheme, isDark)),
+                _iosBarButton(
+                  icon: CupertinoIcons.square_arrow_up,
+                  tooltip: 'Abrir no Safari',
+                  onTap: _openInSafari,
+                ),
+                _iosBarButton(
+                  icon: CupertinoIcons.ellipsis_circle,
+                  tooltip: 'Menu',
+                  onTap: _showIosMenu,
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -3164,16 +3151,19 @@ class _BrowserScreenState extends State<BrowserScreen>
     final showClear = _urlController.text.isNotEmpty && _focusNode.hasFocus;
     return Container(
       height: 38,
-      padding: const EdgeInsets.symmetric(horizontal: 12),
+      margin: const EdgeInsets.symmetric(horizontal: 2),
+      padding: const EdgeInsets.only(left: 11, right: 4),
       decoration: BoxDecoration(
-        color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.07),
+        color: (isDark ? Colors.white : Colors.black).withValues(
+          alpha: isDark ? 0.10 : 0.06,
+        ),
         borderRadius: BorderRadius.circular(19),
       ),
       child: Row(
         children: [
           Icon(
             secure ? CupertinoIcons.lock : CupertinoIcons.search,
-            size: 14,
+            size: 13,
             color: scheme.onSurfaceVariant,
           ),
           const SizedBox(width: 6),
@@ -3181,12 +3171,12 @@ class _BrowserScreenState extends State<BrowserScreen>
             child: CupertinoTextField(
               controller: _urlController,
               focusNode: _focusNode,
-              placeholder: 'Pesquisar ou digitar URL',
+              placeholder: 'Pesquisar ou digitar endereço',
               placeholderStyle: TextStyle(
-                fontSize: 15,
+                fontSize: 14.5,
                 color: scheme.onSurfaceVariant,
               ),
-              style: const TextStyle(fontSize: 15),
+              style: const TextStyle(fontSize: 14.5),
               padding: EdgeInsets.zero,
               decoration: null,
               keyboardType: TextInputType.url,
@@ -3203,18 +3193,33 @@ class _BrowserScreenState extends State<BrowserScreen>
               onChanged: (_) => setState(() {}),
             ),
           ),
-          if (showClear)
-            GestureDetector(
-              onTap: () {
-                _urlController.clear();
-                setState(() {});
-              },
+          GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: showClear
+                ? () {
+                    _urlController.clear();
+                    setState(() {});
+                  }
+                : () {
+                    if (_isLoading) {
+                      _controller?.stopLoading();
+                    } else {
+                      _controller?.reload();
+                    }
+                  },
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
               child: Icon(
-                CupertinoIcons.xmark_circle_fill,
+                showClear
+                    ? CupertinoIcons.xmark_circle_fill
+                    : (_isLoading
+                          ? CupertinoIcons.xmark
+                          : CupertinoIcons.arrow_clockwise),
                 size: 16,
                 color: scheme.onSurfaceVariant,
               ),
             ),
+          ),
         ],
       ),
     );
@@ -3235,11 +3240,11 @@ class _BrowserScreenState extends State<BrowserScreen>
         pressedOpacity: 0.35,
         onPressed: onTap,
         child: SizedBox(
-          width: 46,
-          height: 34,
+          width: 38,
+          height: 42,
           child: Icon(
             icon,
-            size: 22,
+            size: 21,
             color: enabled ? null : CupertinoColors.inactiveGray,
           ),
         ),
@@ -4207,9 +4212,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   leading: const Icon(Icons.folder_outlined),
                   title: const Text('Pastas de downloads'),
                   subtitle: Text(
-                    'Outros: ${AppPaths.base}\n'
-                    'Vídeos: ${AppPaths.videos}\n'
-                    'Músicas: ${AppPaths.music}',
+                    Platform.isIOS
+                        ? 'Arquivos → No meu iPhone → TubeFetch'
+                        : 'Outros: ${AppPaths.base}\n'
+                              'Vídeos: ${AppPaths.videos}\n'
+                              'Músicas: ${AppPaths.music}',
                   ),
                 ),
               ],
@@ -4226,10 +4233,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             child: Column(
               children: [
-                const ListTile(
-                  leading: Icon(Icons.info_outline),
-                  title: Text('Versão'),
-                  subtitle: Text('$kAppVersion (Android)'),
+                ListTile(
+                  leading: const Icon(Icons.info_outline),
+                  title: const Text('Versão'),
+                  subtitle: Text(
+                    '$kAppVersion (${Platform.isIOS ? 'iOS' : 'Android'})',
+                  ),
                 ),
                 const Divider(height: 1),
                 const ListTile(

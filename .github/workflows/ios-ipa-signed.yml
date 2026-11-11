@@ -118,8 +118,8 @@ jobs:
 
           p = pathlib.Path("ios/Runner.xcodeproj/project.pbxproj")
           s = p.read_text()
-          s = s.replace("com.example.tubefetchApp.RunnerTests", bundle + ".RunnerTests")
-          s = s.replace("com.example.tubefetchApp", bundle)
+          s = s.replace("com.sysarchx.tubefetch.RunnerTests", bundle + ".RunnerTests")
+          s = s.replace("com.sysarchx.tubefetch", bundle)
 
 
           def setkv(text, key, value):

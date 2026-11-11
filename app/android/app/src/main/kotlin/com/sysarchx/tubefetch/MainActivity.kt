@@ -1,4 +1,4 @@
-package com.example.tubefetch_app
+package com.sysarchx.tubefetch
 
 import android.content.Intent
 import android.net.Uri
