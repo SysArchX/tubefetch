@@ -90,6 +90,16 @@ SHA-256 do certificado: c4ff9e0318a5d17a15ed67d3d2025f7752ea97e06da61201dde5ef44
 > atualizadas normalmente.
 
 
+## iOS (.ipa)
+
+O TubeFetch também é um app Flutter e roda no iOS: o `.ipa` é gerado por um
+workflow do GitHub Actions em runner macOS
+(**Actions → “iOS (.ipa sem assinatura)” → Run workflow**).
+
+O arquivo sai **sem assinatura** e precisa ser reassinado com o seu Apple ID
+(Sideloadly, AltStore ou Xcode). Passo a passo, limites de validade e diferenças
+em relação ao Android: [`app/IOS.md`](app/IOS.md).
+
 ## Instalação no Linux (.deb)
 
 Baixe o pacote `.deb` e instale com:
