@@ -37,6 +37,7 @@ Há duas versões:
 | **Android** | 1.3.0 | [`TubeFetch-1.3.0-armeabi-v7a.apk`](https://github.com/SysArchX/tubefetch/releases/download/v1.3.0/TubeFetch-1.3.0-armeabi-v7a.apk) (36 MB) | Android 7.0+, aparelho 32 bits |
 | **Android** | 1.3.0 | [`TubeFetch-1.3.0-android.apk`](https://github.com/SysArchX/tubefetch/releases/download/v1.3.0/TubeFetch-1.3.0-android.apk) (81 MB) | Android 7.0+, serve em qualquer aparelho |
 | **Linux x86_64** | 1.1.0 | [`tubefetch_1.1.0_amd64.deb`](https://github.com/SysArchX/tubefetch/releases/download/v1.3.0/tubefetch_1.1.0_amd64.deb) | Debian/Ubuntu com Python 3.11+, GTK 3 e ffmpeg |
+| **iOS** | 1.3.0 | [`TubeFetch-1.3.0-ios-unsigned.ipa`](https://github.com/SysArchX/tubefetch/releases/download/v1.3.0/TubeFetch-1.3.0-ios-unsigned.ipa) (24 MB) | iOS/iPadOS 15+, **sem assinatura** (reassinar com seu Apple ID) |
 
 Todas as versões ficam na página de **[Releases](../../releases)**.
 
