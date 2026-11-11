@@ -87,8 +87,11 @@ SHA-256 do certificado: c4ff9e0318a5d17a15ed67d3d2025f7752ea97e06da61201dde5ef44
 
 > **Atualizando de uma versão anterior:** o APK 1.0.0 usava uma assinatura de
 > depuração diferente. Se ele estiver instalado, desinstale-o antes de instalar
-> esta versão. As versões 1.2.0 e 1.4.0 usam a mesma chave e podem ser
-> atualizadas normalmente.
+> esta versão. As versões 1.2.0 e 1.3.0 usam a mesma chave e podiam ser
+> atualizadas por cima. A **1.4.0 mudou o ID do app** para
+> `com.sysarchx.tubefetch`, então desinstale a 1.3.0 (ou anterior) antes de
+> instalar — o histórico e as preferências do app são perdidos, mas os
+> arquivos já baixados continuam na pasta `Download/TubeFetch`.
 
 
 ## iOS (.ipa)
