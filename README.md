@@ -54,7 +54,7 @@ O **FastSearchX** é um navegador livre com downloader integrado. Há duas vers�
 | **Android** | 2.0.0 | [`FastSearchX-2.0.0-arm64-v8a.apk`](https://github.com/SysArchX/FastSearchX/releases/download/v2.0.0/FastSearchX-2.0.0-arm64-v8a.apk) (48,5 MB) | Android 7.0 (API 24)+, celular 64 bits — **recomendado** |
 | **Android** | 2.0.0 | [`FastSearchX-2.0.0-armeabi-v7a.apk`](https://github.com/SysArchX/FastSearchX/releases/download/v2.0.0/FastSearchX-2.0.0-armeabi-v7a.apk) (69,4 MB) | Android 7.0+, aparelho 32 bits |
 | **Android** | 2.0.0 | [`FastSearchX-2.0.0-android.apk`](https://github.com/SysArchX/FastSearchX/releases/download/v2.0.0/FastSearchX-2.0.0-android.apk) (168 MB) | Android 7.0+, serve em qualquer aparelho |
-| **Linux x86_64** | 2.0.0 | [`fastsearchx_2.0.0_amd64.deb`](https://github.com/SysArchX/FastSearchX/releases/download/v2.0.0/fastsearchx_2.0.0_amd64.deb) (2,9 MB) | Debian/Ubuntu com Python 3.11+, GTK 3, WebKit2GTK 4.1 e ffmpeg |
+| **Linux x86_64** | 2.0.1 | [`fastsearchx_2.0.1_amd64.deb`](https://github.com/SysArchX/FastSearchX/releases/download/v2.0.0/fastsearchx_2.0.1_amd64.deb) (2,9 MB) | Debian/Ubuntu com Python 3.11+, GTK 3, WebKit2GTK 4.1 e ffmpeg |
 | **iOS** | 2.0.0 | [`FastSearchX-2.0.0-ios-unsigned.ipa`](https://github.com/SysArchX/FastSearchX/releases/download/v2.0.0/FastSearchX-2.0.0-ios-unsigned.ipa) (24 MB) | iOS/iPadOS 15+, **sem assinatura** (reassinar com seu Apple ID) |
 
 Todas as versões ficam na página de **[Releases](../../releases)**.
@@ -132,7 +132,7 @@ em relação ao Android: [`app/IOS.md`](app/IOS.md).
 Baixe o pacote `.deb` e instale com:
 
 ```bash
-sudo apt install ./fastsearchx_2.0.0_amd64.deb
+sudo apt install ./fastsearchx_2.0.1_amd64.deb
 ```
 
 O `apt` resolve as dependências automaticamente (incluindo o WebKit2GTK).
@@ -146,6 +146,16 @@ O aplicativo abre como navegador. O downloader de vídeos/músicas fica no botã
 de download da barra de ferramentas, no menu e no botão direito sobre links e
 mídias. Você também pode definir o FastSearchX como **navegador padrão** do
 sistema (o `.desktop` registra `x-scheme-handler/http` e `https`).
+
+> **Instale pelo terminal.** O instalador gráfico do Linux Mint
+> (`Captain`/`AptKit`) e o PackageKit podem falhar com
+> `org.freedesktop.DBus.Error.NoReply` e deixar a transação travada. Isso é um
+> problema do instalador gráfico, não do pacote. O comando acima instala em
+> segundos. Se o erro aparecer, feche a janela do instalador e use o terminal.
+>
+> A versão **2.0.1** do `.deb` removeu os scripts de pós-instalação justamente
+> para não depender do instalador gráfico — o registro de ícones e do menu é
+> feito pelos triggers nativos do `dpkg`.
 
 Para remover:
 

@@ -91,31 +91,9 @@ Description: Navegador estilo Chrome com baixador de vídeos e músicas
  playlist e atualização do yt-dlp.
 EOF
 
-cat > "$STAGE/DEBIAN/postinst" <<'EOF'
-#!/bin/sh
-set -e
-if command -v update-desktop-database >/dev/null 2>&1; then
-    update-desktop-database -q /usr/share/applications || true
-fi
-if command -v gtk-update-icon-cache >/dev/null 2>&1; then
-    gtk-update-icon-cache -q -t /usr/share/icons/hicolor || true
-fi
-exit 0
-EOF
-chmod 755 "$STAGE/DEBIAN/postinst"
-
-cat > "$STAGE/DEBIAN/postrm" <<'EOF'
-#!/bin/sh
-set -e
-if command -v update-desktop-database >/dev/null 2>&1; then
-    update-desktop-database -q /usr/share/applications || true
-fi
-if command -v gtk-update-icon-cache >/dev/null 2>&1; then
-    gtk-update-icon-cache -q -t /usr/share/icons/hicolor || true
-fi
-exit 0
-EOF
-chmod 755 "$STAGE/DEBIAN/postrm"
+# Sem scripts de pós-instalação: os caches de desktop/ícones são atualizados
+# pelos triggers do dpkg (desktop-file-utils e hicolor-icon-theme).
+# Isso evita qualquer chance de o instalador gráfico travar (AptKit/PackageKit).
 
 # ----------------------------------------------------------------------
 # Empacotamento
