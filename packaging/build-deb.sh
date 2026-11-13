@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
-# Constrói o pacote .deb do TubeFetch.
+# Constrói o pacote .deb do FastSearchX.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
-VERSION="$(PYTHONPATH="$ROOT/src" python3 -c 'import tubefetch; print(tubefetch.APP_VERSION)')"
+VERSION="$(PYTHONPATH="$ROOT/src" python3 -c 'import fastsearchx; print(fastsearchx.APP_VERSION)')"
 ARCH="$(dpkg --print-architecture)"
-PKG_NAME="tubefetch_${VERSION}_${ARCH}"
+PKG_NAME="fastsearchx_${VERSION}_${ARCH}"
 STAGE="$ROOT/build/$PKG_NAME"
 DIST="$ROOT/dist"
 
@@ -26,48 +26,48 @@ QJS="$ROOT/data/bin/qjs"
 rm -rf "$STAGE"
 mkdir -p "$STAGE/DEBIAN"
 mkdir -p "$STAGE/usr/bin"
-mkdir -p "$STAGE/usr/lib/tubefetch"
+mkdir -p "$STAGE/usr/lib/fastsearchx"
 mkdir -p "$STAGE/usr/share/applications"
-mkdir -p "$STAGE/usr/share/doc/tubefetch"
+mkdir -p "$STAGE/usr/share/doc/fastsearchx"
 
-cp -a "$ROOT/src/tubefetch" "$STAGE/usr/lib/tubefetch/"
-find "$STAGE/usr/lib/tubefetch" -type d -name "__pycache__" -prune -exec rm -rf {} +
-find "$STAGE/usr/lib/tubefetch" -type f -name "*.pyc" -delete
+cp -a "$ROOT/src/fastsearchx" "$STAGE/usr/lib/fastsearchx/"
+find "$STAGE/usr/lib/fastsearchx" -type d -name "__pycache__" -prune -exec rm -rf {} +
+find "$STAGE/usr/lib/fastsearchx" -type f -name "*.pyc" -delete
 
-cp -a "$ROOT/vendor" "$STAGE/usr/lib/tubefetch/vendor"
-find "$STAGE/usr/lib/tubefetch/vendor" -type d -name "__pycache__" -prune -exec rm -rf {} +
-find "$STAGE/usr/lib/tubefetch/vendor" -type f -name "*.pyc" -delete
+cp -a "$ROOT/vendor" "$STAGE/usr/lib/fastsearchx/vendor"
+find "$STAGE/usr/lib/fastsearchx/vendor" -type d -name "__pycache__" -prune -exec rm -rf {} +
+find "$STAGE/usr/lib/fastsearchx/vendor" -type f -name "*.pyc" -delete
 
-install -Dm755 "$QJS" "$STAGE/usr/lib/tubefetch/bin/qjs"
+install -Dm755 "$QJS" "$STAGE/usr/lib/fastsearchx/bin/qjs"
 
-cat > "$STAGE/usr/bin/tubefetch" <<'LAUNCHER'
+cat > "$STAGE/usr/bin/fastsearchx" <<'LAUNCHER'
 #!/bin/sh
-export PYTHONPATH="/usr/lib/tubefetch${PYTHONPATH:+:$PYTHONPATH}"
-exec python3 -m tubefetch "$@"
+export PYTHONPATH="/usr/lib/fastsearchx${PYTHONPATH:+:$PYTHONPATH}"
+exec python3 -m fastsearchx "$@"
 LAUNCHER
-chmod 755 "$STAGE/usr/bin/tubefetch"
+chmod 755 "$STAGE/usr/bin/fastsearchx"
 
-install -Dm644 "$ROOT/data/com.lazlabs.TubeFetch.desktop" \
-    "$STAGE/usr/share/applications/com.lazlabs.TubeFetch.desktop"
+install -Dm644 "$ROOT/data/com.lazlabs.FastSearchX.desktop" \
+    "$STAGE/usr/share/applications/com.lazlabs.FastSearchX.desktop"
 
 for SIZE in 16 24 32 48 64 128 256 512; do
-    ICON="$ROOT/data/icons/tubefetch-${SIZE}.png"
+    ICON="$ROOT/data/icons/fastsearchx-${SIZE}.png"
     if [ -f "$ICON" ]; then
         install -Dm644 "$ICON" \
-            "$STAGE/usr/share/icons/hicolor/${SIZE}x${SIZE}/apps/tubefetch.png"
+            "$STAGE/usr/share/icons/hicolor/${SIZE}x${SIZE}/apps/fastsearchx.png"
     fi
 done
-install -Dm644 "$ROOT/data/tubefetch.svg" \
-    "$STAGE/usr/share/icons/hicolor/scalable/apps/tubefetch.svg"
+install -Dm644 "$ROOT/data/fastsearchx.svg" \
+    "$STAGE/usr/share/icons/hicolor/scalable/apps/fastsearchx.svg"
 
-install -Dm644 "$ROOT/README.md" "$STAGE/usr/share/doc/tubefetch/README.md"
+install -Dm644 "$ROOT/README.md" "$STAGE/usr/share/doc/fastsearchx/README.md"
 install -Dm644 "$ROOT/vendor/yt_dlp-2026.10.26.dist-info/licenses/LICENSE" \
-    "$STAGE/usr/share/doc/tubefetch/copyright-yt-dlp" 2>/dev/null || true
+    "$STAGE/usr/share/doc/fastsearchx/copyright-yt-dlp" 2>/dev/null || true
 
 # Permissões consistentes (arquivos 644; executáveis 755)
 find "$STAGE/usr" -type d -exec chmod 755 {} +
 find "$STAGE/usr" -type f -exec chmod 644 {} +
-chmod 755 "$STAGE/usr/bin/tubefetch" "$STAGE/usr/lib/tubefetch/bin/qjs"
+chmod 755 "$STAGE/usr/bin/fastsearchx" "$STAGE/usr/lib/fastsearchx/bin/qjs"
 
 # ----------------------------------------------------------------------
 # Controle do pacote
@@ -75,19 +75,19 @@ chmod 755 "$STAGE/usr/bin/tubefetch" "$STAGE/usr/lib/tubefetch/bin/qjs"
 INSTALLED_SIZE="$(du -sk --exclude=DEBIAN "$STAGE" | cut -f1)"
 
 cat > "$STAGE/DEBIAN/control" <<EOF
-Package: tubefetch
+Package: fastsearchx
 Version: $VERSION
-Section: video
+Section: web
 Priority: optional
 Architecture: $ARCH
 Installed-Size: $INSTALLED_SIZE
-Depends: python3 (>= 3.11), python3-gi, gir1.2-gtk-3.0, ffmpeg
+Depends: python3 (>= 3.11), python3-gi, gir1.2-gtk-3.0, gir1.2-webkit2-4.1, ffmpeg
 Recommends: python3-pip, yt-dlp, xdg-utils
 Maintainer: LazLabs <lazlabs@localhost>
-Description: Baixador de vídeos e músicas do YouTube
- Interface gráfica simples para baixar vídeos (MP4) e músicas (MP3)
- de links e playlists do YouTube. Usa o yt-dlp embutido, com suporte
- a progresso, cancelamento, escolha de qualidade, seleção de itens da
+Description: Navegador estilo Chrome com baixador de vídeos e músicas
+ Navegador com abas (WebKit2GTK) que também baixa vídeos (MP4) e músicas
+ (MP3) de links e playlists do YouTube. Usa o yt-dlp embutido, com
+ progresso, cancelamento, escolha de qualidade, seleção de itens da
  playlist e atualização do yt-dlp.
 EOF
 

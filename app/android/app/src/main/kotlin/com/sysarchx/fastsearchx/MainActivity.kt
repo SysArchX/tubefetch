@@ -1,4 +1,4 @@
-package com.sysarchx.tubefetch
+package com.sysarchx.fastsearchx
 
 import android.content.Intent
 import android.net.Uri
@@ -8,7 +8,7 @@ import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 
 class MainActivity : FlutterActivity() {
-    private val channelName = "tubefetch/intent"
+    private val channelName = "fastsearchx/intent"
     private var channel: MethodChannel? = null
     private var pendingUrl: String? = null
 

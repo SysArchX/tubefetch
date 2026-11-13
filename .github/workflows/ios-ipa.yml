@@ -13,7 +13,7 @@ on:
       build_name:
         description: "Nome do build (versionName)"
         required: false
-        default: "1.4.0"
+        default: "2.0.0"
 
 concurrency:
   group: ios-ipa-${{ github.ref }}
@@ -59,7 +59,7 @@ jobs:
           APP="build/ios/iphoneos/Runner.app"
           test -d "$APP"
           VERSION="$(grep -m1 '^version:' pubspec.yaml | sed 's/version: *//; s/+.*//')"
-          NAME="TubeFetch-${VERSION}-ios-unsigned"
+          NAME="FastSearchX-${VERSION}-ios-unsigned"
           rm -rf Payload "$NAME.ipa"
           mkdir -p Payload
           cp -R "$APP" Payload/
@@ -70,9 +70,9 @@ jobs:
       - name: Publicar artefato
         uses: actions/upload-artifact@v4
         with:
-          name: TubeFetch-ios-unsigned-ipa
+          name: FastSearchX-ios-unsigned-ipa
           path: |
-            app/TubeFetch-*-ios-unsigned.ipa
-            app/TubeFetch-*-ios-unsigned.ipa.sha256
+            app/FastSearchX-*-ios-unsigned.ipa
+            app/FastSearchX-*-ios-unsigned.ipa.sha256
           if-no-files-found: error
           retention-days: 90

@@ -1,15 +1,15 @@
-// Smoke tests do TubeFetch: validam constantes e utilitários de download
+// Smoke tests do FastSearchX: validam constantes e utilitários de download
 // sem instanciar o WebView (que exige plataforma nativa).
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:tubefetch_app/main.dart';
+import 'package:fastsearchx_app/main.dart';
 
 void main() {
-  test('TubeFetch: pastas de download e créditos', () {
-    expect(AppPaths.base, '/storage/emulated/0/Download/TubeFetch');
-    expect(AppPaths.videos, '${AppPaths.base}/TubeFetch_videos');
-    expect(AppPaths.music, '${AppPaths.base}/TubeFetch_music');
-    expect(kGitHubUrl, 'https://github.com/SysArchX/tubefetch');
+  test('FastSearchX: pastas de download e créditos', () {
+    expect(AppPaths.base, '/storage/emulated/0/Download/FastSearchX');
+    expect(AppPaths.videos, '${AppPaths.base}/FastSearchX_videos');
+    expect(AppPaths.music, '${AppPaths.base}/FastSearchX_music');
+    expect(kGitHubUrl, 'https://github.com/SysArchX/FastSearchX');
     expect(kHomeUrl, 'https://www.google.com');
     expect(kAppVersion, '1.3.0');
   });

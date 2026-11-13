@@ -1,0 +1,13 @@
+[Desktop Entry]
+Type=Application
+Name=FastSearchX
+GenericName=Navegador e baixador de vídeos
+Comment=Navegue na web e baixe vídeos e músicas do YouTube
+Exec=fastsearchx %U
+Icon=fastsearchx
+Terminal=false
+Categories=Network;WebBrowser;
+Keywords=internet;navegador;browser;youtube;download;baixar;playlist;video;music;musica;mp3;mp4;yt-dlp;
+MimeType=text/html;x-scheme-handler/http;x-scheme-handler/https;
+StartupNotify=true
+StartupWMClass=fastsearchx

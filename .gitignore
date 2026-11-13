@@ -1,8 +1,14 @@
 # Android debug APK added for release downloads
-TubeFetchAndroid/TubeFetchAndroid-debug-1.0.0.apk
+FastSearchXAndroid/FastSearchXAndroid-debug-1.0.0.apk
 
 # Build artifacts (APK builds, manifests, etc) — ignored for clarity of release assets
 build/app/outputs/
+/build/
+/dist/
+/vendor/
+/data/bin/
+/TubeFetchAndroid/
+build_android.log
 
 __pycache__/
 *.pyc

@@ -15,7 +15,7 @@ if (keystorePropertiesFile.exists()) {
 val hasReleaseKey = keystorePropertiesFile.exists()
 
 android {
-    namespace = "com.sysarchx.tubefetch"
+    namespace = "com.sysarchx.fastsearchx"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -26,7 +26,7 @@ android {
 
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.sysarchx.tubefetch"
+        applicationId = "com.sysarchx.fastsearchx"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
@@ -57,11 +57,12 @@ android {
     }
 
     packaging {
-        // Empacota as bibliotecas nativas de forma "legada" (extraídas na instalação).
-        // Isso evita falhas de instalação/carregamento em aparelhos Android 7/8/9 que
-        // não conseguem mapear as .so direto do APK (extractNativeLibs=false).
+        // Empacota as bibliotecas nativas exatamente como na 1.2.0 (que instala
+        // em qualquer aparelho): .so sem compressão (Stored) e
+        // extractNativeLibs=false no manifesto. O modo "legado" (extrair na
+        // instalação) quebrava a instalação em vários aparelhos.
         jniLibs {
-            useLegacyPackaging = true
+            useLegacyPackaging = false
         }
     }
 

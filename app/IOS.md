@@ -1,4 +1,4 @@
-# TubeFetch no iOS (.ipa)
+# FastSearchX no iOS (.ipa)
 
 O `.ipa` é gerado num runner **macOS** do GitHub Actions, porque o build de iOS
 só existe com Xcode (não há como compilar iOS no Linux nem "converter" o APK).
@@ -7,9 +7,9 @@ só existe com Xcode (não há como compilar iOS no Linux nem "converter" o APK)
 
 1. Abra **Actions → “iOS (.ipa sem assinatura)” → Run workflow**.
 2. Espere ~20–40 min (o pod do FFmpeg baixa ~49 MB de frameworks).
-3. Baixe o artefato **`TubeFetch-ios-unsigned-ipa`** no fim da página da execução.
+3. Baixe o artefato **`FastSearchX-ios-unsigned-ipa`** no fim da página da execução.
 
-O artefato traz `TubeFetch-<versao>-ios-unsigned.ipa` e o `.sha256`.
+O artefato traz `FastSearchX-<versao>-ios-unsigned.ipa` e o `.sha256`.
 Ele sai **sem assinatura** — a Apple só instala app assinado por um Apple ID.
 
 ## Instalar no iPhone
@@ -36,12 +36,12 @@ flutter build ios --release --no-codesign   # sem assinatura, para reassinar
 
 ## O que muda no iOS em relação ao Android
 
-- **Downloads** vão para `Documents/TubeFetch` dentro do sandbox e aparecem no
-  app **Arquivos** em *No meu iPhone → TubeFetch* (ligado por
+- **Downloads** vão para `Documents/FastSearchX` dentro do sandbox e aparecem no
+  app **Arquivos** em *No meu iPhone → FastSearchX* (ligado por
   `UIFileSharingEnabled` no `Info.plist`).
 - **Navegador padrão** não pode ser registrado por app no iOS; o item
   correspondente nas configurações só aparece no Android.
-- As pastas `Download/TubeFetch*` da memória compartilhada do Android não
+- As pastas `Download/FastSearchX*` da memória compartilhada do Android não
   existem no iOS (`MANAGE_EXTERNAL_STORAGE` é exclusivo do Android).
 - HTTP simples é liberado por `NSAppTransportSecurity` (equivalente ao
   `usesCleartextTraffic` do Android).

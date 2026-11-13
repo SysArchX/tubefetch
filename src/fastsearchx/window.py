@@ -1,4 +1,4 @@
-"""Interface gráfica (GTK3) do TubeFetch."""
+"""Interface gráfica (GTK3) do FastSearchX."""
 
 from __future__ import annotations
 
@@ -21,12 +21,14 @@ gi.require_version("Gdk", "3.0")
 from gi.repository import Gdk, Gio, GLib, Gtk, Pango  # noqa: E402
 
 from . import APP_DESCRIPTION, APP_ID, APP_NAME, APP_VERSION  # noqa: E402
+from .browser import BROWSER_CSS, BrowserWindow  # noqa: E402
 from .downloader import DownloadJob, DownloadOptions, ffmpeg_available  # noqa: E402
 from .ytdlp_loader import YTDLP_ORIGIN, YTDLP_VERSION  # noqa: E402
 
-CONFIG_DIR = Path(GLib.get_user_config_dir()) / "tubefetch"
+CONFIG_DIR = Path(GLib.get_user_config_dir()) / "fastsearchx"
 CONFIG_FILE = CONFIG_DIR / "config.json"
 LEGACY_CONFIG_FILE = Path(GLib.get_user_config_dir()) / "baixador-yt" / "config.json"
+PREVIOUS_CONFIG_FILE = Path(GLib.get_user_config_dir()) / "tubefetch" / "config.json"
 
 VIDEO_QUALITIES = [
     ("Melhor qualidade", "best"),
@@ -80,13 +82,16 @@ def _default_download_dir() -> str:
 
 
 def _load_config() -> dict:
-    if not CONFIG_FILE.exists() and LEGACY_CONFIG_FILE.is_file():
-        # Migra as preferências da versão antiga (baixador-yt).
-        try:
-            CONFIG_DIR.mkdir(parents=True, exist_ok=True)
-            shutil.copy2(LEGACY_CONFIG_FILE, CONFIG_FILE)
-        except OSError:
-            pass
+    if not CONFIG_FILE.exists():
+        # Migra as preferências das versões antigas (baixador-yt e TubeFetch).
+        for legacy in (PREVIOUS_CONFIG_FILE, LEGACY_CONFIG_FILE):
+            if legacy.is_file():
+                try:
+                    CONFIG_DIR.mkdir(parents=True, exist_ok=True)
+                    shutil.copy2(legacy, CONFIG_FILE)
+                    break
+                except OSError:
+                    pass
     try:
         with open(CONFIG_FILE, encoding="utf-8") as handle:
             data = json.load(handle)
@@ -165,7 +170,7 @@ class MainWindow(Gtk.ApplicationWindow):
         self._updating_ytdlp = False
 
         self.set_title(APP_NAME)
-        self.set_icon_name("tubefetch")
+        self.set_icon_name("fastsearchx")
         self.set_default_size(780, 720)
         self.set_size_request(640, 560)
 
@@ -680,7 +685,7 @@ class MainWindow(Gtk.ApplicationWindow):
         threading.Thread(target=self._run_ytdlp_update, daemon=True).start()
 
     def _run_ytdlp_update(self) -> None:
-        target = Path(GLib.get_user_data_dir()) / "tubefetch" / "vendor"
+        target = Path(GLib.get_user_data_dir()) / "fastsearchx" / "vendor"
         target.mkdir(parents=True, exist_ok=True)
         command = [
             sys.executable,
@@ -722,7 +727,7 @@ class MainWindow(Gtk.ApplicationWindow):
             )
             return False
 
-        target = Path(GLib.get_user_data_dir()) / "tubefetch" / "vendor"
+        target = Path(GLib.get_user_data_dir()) / "fastsearchx" / "vendor"
         version = _vendor_version(target) or "mais recente"
         self.status_label.set_text(f"yt-dlp {version} instalado. Reinicie o aplicativo.")
         dialog = Gtk.MessageDialog(
@@ -746,7 +751,7 @@ class MainWindow(Gtk.ApplicationWindow):
 
     def _restart(self) -> None:
         self._save_current_config()
-        os.execv(sys.executable, [sys.executable, "-m", "tubefetch"] + sys.argv[1:])
+        os.execv(sys.executable, [sys.executable, "-m", "fastsearchx"] + sys.argv[1:])
 
     def _show_about(self, *_args) -> None:
         dialog = Gtk.AboutDialog(transient_for=self, modal=True)
@@ -758,7 +763,7 @@ class MainWindow(Gtk.ApplicationWindow):
         )
         dialog.set_license_type(Gtk.License.MIT_X11)
         dialog.set_authors(["LazLabs"])
-        dialog.set_logo_icon_name("tubefetch")
+        dialog.set_logo_icon_name("fastsearchx")
         dialog.run()
         dialog.destroy()
 
@@ -769,7 +774,7 @@ class MainWindow(Gtk.ApplicationWindow):
         try:
             notification = Gio.Notification.new(title)
             notification.set_body(body)
-            notification.set_icon(Gio.ThemedIcon.new("tubefetch"))
+            notification.set_icon(Gio.ThemedIcon.new("fastsearchx"))
             self._app.send_notification(None, notification)
         except Exception:
             pass
@@ -819,19 +824,20 @@ class MainWindow(Gtk.ApplicationWindow):
         self._save_current_config()
 
 
-class TubeFetchApplication(Gtk.Application):
+class FastSearchXApplication(Gtk.Application):
     def __init__(self) -> None:
         super().__init__(
             application_id=APP_ID,
             flags=Gio.ApplicationFlags.HANDLES_COMMAND_LINE,
         )
-        self._window: Optional[MainWindow] = None
+        self._browser: Optional[BrowserWindow] = None
+        self._downloaders: list[MainWindow] = []
         self._pending_url: Optional[str] = None
 
     def do_startup(self) -> None:
         Gtk.Application.do_startup(self)
         provider = Gtk.CssProvider()
-        provider.load_from_data(CSS.encode("utf-8"))
+        provider.load_from_data((CSS + BROWSER_CSS).encode("utf-8"))
         screen = Gdk.Screen.get_default()
         if screen is not None:
             Gtk.StyleContext.add_provider_for_screen(
@@ -852,10 +858,28 @@ class TubeFetchApplication(Gtk.Application):
         return 0
 
     def do_activate(self) -> None:
-        if self._window is None:
-            self._window = MainWindow(self)
-            self._window.show_all()
-        self._window.present()
+        if self._browser is None:
+            self._browser = BrowserWindow(self, on_download=self._open_downloader)
+            self._browser.connect("destroy", self._on_browser_destroyed)
+            self._browser.show_all()
+        self._browser.present()
         if self._pending_url:
-            self._window.set_url(self._pending_url)
+            self._browser.open_url(self._pending_url)
             self._pending_url = None
+
+    def _on_browser_destroyed(self, *_args) -> None:
+        self._browser = None
+        for window in list(self._downloaders):
+            window.destroy()
+        self._downloaders.clear()
+
+    def _open_downloader(self, url: Optional[str] = None) -> None:
+        window = MainWindow(self, url or None)
+        window.show_all()
+        window.present()
+        self._downloaders.append(window)
+        window.connect("destroy", self._on_downloader_destroyed)
+
+    def _on_downloader_destroyed(self, window) -> None:
+        if window in self._downloaders:
+            self._downloaders.remove(window)

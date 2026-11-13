@@ -1,4 +1,4 @@
-// TubeFetch Browser — Android (Flutter / Dart)
+// FastSearchX Browser — Android (Flutter / Dart)
 //
 // Navegador no estilo Chrome com Material 3:
 //  1. Barra superior clássica (voltar, avançar, endereço, recarregar e menu ⋮).
@@ -28,25 +28,25 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:youtube_explode_dart/youtube_explode_dart.dart';
 
 const String kHomeUrl = 'https://www.google.com';
-const String kGitHubUrl = 'https://github.com/SysArchX/tubefetch';
-const String kAppVersion = '1.4.1';
+const String kGitHubUrl = 'https://github.com/SysArchX/FastSearchX';
+const String kAppVersion = '2.0.0';
 
 /// Canal nativo para receber links (navegador padrão) e abrir ajustes.
-const MethodChannel kIntentChannel = MethodChannel('tubefetch/intent');
+const MethodChannel kIntentChannel = MethodChannel('fastsearchx/intent');
 const String _kUserAgent =
     'Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 '
     '(KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36';
 
 /// Caminhos locais de download (Android).
 ///
-/// Arquivos comuns ficam em `Download/TubeFetch`; vídeos e músicas ficam em
+/// Arquivos comuns ficam em `Download/FastSearchX`; vídeos e músicas ficam em
 /// subpastas próprias.
 abstract final class AppPaths {
   /// Raiz onde os downloads são salvos.
   ///
-  /// - Android: `Download/TubeFetch` na memória compartilhada.
-  /// - iOS: `Documents/TubeFetch` dentro do sandbox do app, que aparece no app
-  ///   **Arquivos** em "No meu iPhone → TubeFetch" (precisa de
+  /// - Android: `Download/FastSearchX` na memória compartilhada.
+  /// - iOS: `Documents/FastSearchX` dentro do sandbox do app, que aparece no app
+  ///   **Arquivos** em "No meu iPhone → FastSearchX" (precisa de
   ///   `UIFileSharingEnabled` no Info.plist).
   static String get _root {
     if (Platform.isAndroid) return '/storage/emulated/0/Download';
@@ -55,9 +55,9 @@ abstract final class AppPaths {
     return '${Directory.systemTemp.parent.path}/Documents';
   }
 
-  static String get base => '$_root/TubeFetch';
-  static String get videos => '$base/TubeFetch_videos';
-  static String get music => '$base/TubeFetch_music';
+  static String get base => '$_root/FastSearchX';
+  static String get videos => '$base/FastSearchX_videos';
+  static String get music => '$base/FastSearchX_music';
 
   static Future<void> ensureFolders() async {
     for (final path in [base, videos, music]) {
@@ -699,7 +699,7 @@ String safeFileName(String title) {
       .replaceAll(RegExp(r'[\\/:*?"<>|]'), '')
       .replaceAll(RegExp(r'\s+'), ' ')
       .trim();
-  if (name.isEmpty) name = 'TubeFetch';
+  if (name.isEmpty) name = 'FastSearchX';
   if (name.length > 80) name = name.substring(0, 80);
   return name;
 }
@@ -2042,21 +2042,21 @@ Future<void> main() async {
   await SettingsStore.load();
   await HistoryStore.instance.load();
   AppPaths.ensureFolders();
-  runApp(const TubeFetchApp());
+  runApp(const FastSearchXApp());
 }
 
 // ---------------------------------------------------------------------------
 // App + tema
 // ---------------------------------------------------------------------------
 
-class TubeFetchApp extends StatefulWidget {
-  const TubeFetchApp({super.key});
+class FastSearchXApp extends StatefulWidget {
+  const FastSearchXApp({super.key});
 
   @override
-  State<TubeFetchApp> createState() => _TubeFetchAppState();
+  State<FastSearchXApp> createState() => _FastSearchXAppState();
 }
 
-class _TubeFetchAppState extends State<TubeFetchApp> {
+class _FastSearchXAppState extends State<FastSearchXApp> {
   ThemeMode _mode = SettingsStore.mode;
   Color _seed = SettingsStore.seed;
 
@@ -2102,7 +2102,7 @@ class _TubeFetchAppState extends State<TubeFetchApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'TubeFetch',
+      title: 'FastSearchX',
       debugShowCheckedModeBanner: false,
       themeMode: _mode,
       theme: _theme(Brightness.light),
@@ -2159,6 +2159,14 @@ class _BrowserScreenState extends State<BrowserScreen>
   bool _mediaBannerDismissed = false;
   Timer? _iosMediaTimer;
   String? _lastClipboardPrompt;
+
+  // "Liquid Glass" real: como o Flutter não consegue aplicar BackdropFilter
+  // sobre a WKWebView (platform view), tiramos um screenshot da faixa de baixo
+  // da página e desfocamos essa imagem atrás da cápsula da barra.
+  final GlobalKey _webViewKey = GlobalKey();
+  ui.Image? _barSnapshot;
+  Timer? _blurTimer;
+  bool _capturingBlur = false;
   String? _pendingIntentUrl;
   final Map<String, DateTime> _recentDownloads = {};
 
@@ -2207,6 +2215,8 @@ class _BrowserScreenState extends State<BrowserScreen>
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _iosMediaTimer?.cancel();
+    _blurTimer?.cancel();
+    _barSnapshot?.dispose();
     _urlController.dispose();
     _focusNode.dispose();
     super.dispose();
@@ -2214,7 +2224,10 @@ class _BrowserScreenState extends State<BrowserScreen>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) _checkClipboard();
+    if (state == AppLifecycleState.resumed) {
+      _checkClipboard();
+      _scheduleBarSnapshot(400);
+    }
   }
 
   Future<void> _syncNavState() async {
@@ -2239,9 +2252,9 @@ class _BrowserScreenState extends State<BrowserScreen>
           try {
             var msg = JSON.stringify(payload);
             if (window.flutter_inappwebview && window.flutter_inappwebview.callHandler) {
-              window.flutter_inappwebview.callHandler('TubeFetchBridge', msg);
-            } else if (window.TubeFetchBridge && window.TubeFetchBridge.postMessage) {
-              window.TubeFetchBridge.postMessage(msg);
+              window.flutter_inappwebview.callHandler('FastSearchXBridge', msg);
+            } else if (window.FastSearchXBridge && window.FastSearchXBridge.postMessage) {
+              window.FastSearchXBridge.postMessage(msg);
             }
           } catch (e) {}
         }
@@ -2761,14 +2774,23 @@ class _BrowserScreenState extends State<BrowserScreen>
         break;
       case 'history':
         Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (_) => HistoryScreen(
-              onOpen: (url) {
-                Navigator.of(context).pop();
-                _loadUrl(url);
-              },
-            ),
-          ),
+          Platform.isIOS
+              ? CupertinoPageRoute(
+                  builder: (_) => HistoryScreen(
+                    onOpen: (url) {
+                      Navigator.of(context).pop();
+                      _loadUrl(url);
+                    },
+                  ),
+                )
+              : MaterialPageRoute(
+                  builder: (_) => HistoryScreen(
+                    onOpen: (url) {
+                      Navigator.of(context).pop();
+                      _loadUrl(url);
+                    },
+                  ),
+                ),
         );
         break;
       case 'downloads':
@@ -2776,13 +2798,21 @@ class _BrowserScreenState extends State<BrowserScreen>
         break;
       case 'settings':
         Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (_) => SettingsScreen(
-              mode: widget.themeMode,
-              seed: widget.seed,
-              onChanged: widget.onThemeChanged,
-            ),
-          ),
+          Platform.isIOS
+              ? CupertinoPageRoute(
+                  builder: (_) => SettingsScreen(
+                    mode: widget.themeMode,
+                    seed: widget.seed,
+                    onChanged: widget.onThemeChanged,
+                  ),
+                )
+              : MaterialPageRoute(
+                  builder: (_) => SettingsScreen(
+                    mode: widget.themeMode,
+                    seed: widget.seed,
+                    onChanged: widget.onThemeChanged,
+                  ),
+                ),
         );
         break;
       case 'home':
@@ -2795,21 +2825,24 @@ class _BrowserScreenState extends State<BrowserScreen>
   }
 
   void _openDownloads() {
-    Navigator.of(context)
-        .push(MaterialPageRoute(builder: (_) => const DownloadsScreen()));
+    Navigator.of(context).push(
+      Platform.isIOS
+          ? CupertinoPageRoute(builder: (_) => const DownloadsScreen())
+          : MaterialPageRoute(builder: (_) => const DownloadsScreen()),
+    );
   }
 
   void _showAbout() {
     showAboutDialog(
       context: context,
-      applicationName: 'TubeFetch',
+      applicationName: 'FastSearchX',
       applicationVersion: kAppVersion,
       applicationLegalese: '© SysArchX',
       children: const [
         SizedBox(height: 12),
         Text(
           'Navegador completo com download de vídeos, músicas e qualquer '
-          'arquivo. Vídeos e músicas vão para subpastas em Download/TubeFetch; '
+          'arquivo. Vídeos e músicas vão para subpastas em Download/FastSearchX; '
           'os demais arquivos ficam na pasta principal.',
         ),
       ],
@@ -3080,7 +3113,7 @@ class _BrowserScreenState extends State<BrowserScreen>
       onWebViewCreated: (controller) {
         _controller = controller;
         controller.addJavaScriptHandler(
-          handlerName: 'TubeFetchBridge',
+          handlerName: 'FastSearchXBridge',
           callback: (args) {
             _onBridgeMessage(args);
             return null;
@@ -3129,9 +3162,14 @@ class _BrowserScreenState extends State<BrowserScreen>
         });
         await _syncNavState();
         await _injectBridge();
+        _scheduleBarSnapshot(280);
       },
       onProgressChanged: (controller, progress) {
         if (mounted) setState(() => _progress = progress / 100);
+        if (progress >= 100) _scheduleBarSnapshot(320);
+      },
+      onScrollChanged: (controller, position, size) {
+        _scheduleBarSnapshot(130);
       },
       onUpdateVisitedHistory: (controller, url, isReload) {
         if (url != null) _onPageUrl(url.toString());
@@ -3250,7 +3288,12 @@ class _BrowserScreenState extends State<BrowserScreen>
                     )
                   : null,
             ),
-            Expanded(child: _buildWebView()),
+            Expanded(
+              child: KeyedSubtree(
+                key: _webViewKey,
+                child: _buildWebView(),
+              ),
+            ),
             if (_showMediaBanner) _buildMediaBanner(scheme),
             SafeArea(top: false, child: _buildIosChrome(scheme, isDark)),
           ],
@@ -3269,87 +3312,202 @@ class _BrowserScreenState extends State<BrowserScreen>
     final hairline = (isDark ? Colors.white : Colors.black).withValues(
       alpha: 0.14,
     );
+    final snapshot = _barSnapshot;
     return Padding(
       padding: const EdgeInsets.fromLTRB(10, 6, 10, 8),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(28),
-        child: BackdropFilter(
-          filter: ui.ImageFilter.blur(sigmaX: 30, sigmaY: 30),
-          child: Container(
-            height: 54,
-            padding: const EdgeInsets.symmetric(horizontal: 3),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [top, bottom],
+      child: Container(
+        height: 54,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(28),
+          color: (isDark ? Colors.black : Colors.white).withValues(alpha: 0.30),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: isDark ? 0.50 : 0.16),
+              blurRadius: 22,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
+        foregroundDecoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(28),
+          border: Border.all(color: hairline, width: 0.6),
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(27.4),
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              if (snapshot != null)
+                // O conteúdo real da página, desfocado: vidro de verdade,
+                // em vez de um gradiente opaco.
+                Transform.scale(
+                  scale: 1.18,
+                  child: ImageFiltered(
+                    imageFilter: ui.ImageFilter.blur(sigmaX: 26, sigmaY: 26),
+                    child: RawImage(
+                      image: snapshot,
+                      fit: BoxFit.cover,
+                      alignment: Alignment.bottomCenter,
+                    ),
+                  ),
+                )
+              else
+                DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [top, bottom],
+                    ),
+                  ),
+                ),
+              // Tinta translúcida sobre o desfoque, para manter o contraste
+              // do texto e do campo de endereço.
+              DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      (isDark ? const Color(0xFF1C1C1E) : Colors.white)
+                          .withValues(alpha: isDark ? 0.56 : 0.44),
+                      (isDark ? const Color(0xFF101012) : const Color(0xFFF7F7FA))
+                          .withValues(alpha: isDark ? 0.70 : 0.60),
+                    ],
+                  ),
+                ),
               ),
-              borderRadius: BorderRadius.circular(28),
-              border: Border.all(color: hairline, width: 0.6),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: isDark ? 0.50 : 0.14),
-                  blurRadius: 20,
-                  offset: const Offset(0, 8),
+              // Reflexo especular no topo, como no vidro do iOS.
+              Align(
+                alignment: Alignment.topCenter,
+                child: IgnorePointer(
+                  child: Container(
+                    height: 22,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Colors.white.withValues(alpha: isDark ? 0.16 : 0.50),
+                          Colors.white.withValues(alpha: 0),
+                        ],
+                      ),
+                    ),
+                  ),
                 ),
-              ],
-            ),
-            child: Row(
-              children: [
-                _iosBarButton(
-                  icon: CupertinoIcons.chevron_back,
-                  tooltip: 'Voltar',
-                  onTap: _canGoBack ? () => _controller?.goBack() : null,
-                ),
-                _iosBarButton(
-                  icon: CupertinoIcons.chevron_forward,
-                  tooltip: 'Avançar',
-                  onTap: _canGoForward ? () => _controller?.goForward() : null,
-                ),
-                Expanded(child: _buildIosAddressPill(scheme, isDark)),
-                ListenableBuilder(
-                  listenable: DownloadManager.instance,
-                  builder: (_, _) {
-                    final tasks = DownloadManager.instance.tasks;
-                    return Stack(
-                      clipBehavior: Clip.none,
-                      alignment: Alignment.center,
-                      children: [
-                        _iosBarButton(
-                          icon: CupertinoIcons.tray_arrow_down,
-                          tooltip: 'Downloads',
-                          onTap: () => _onMenuSelected('downloads'),
-                        ),
-                        if (tasks.isNotEmpty)
-                          Positioned(
-                            right: 7,
-                            top: 8,
-                            child: Container(
-                              width: 8,
-                              height: 8,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: DownloadManager.instance.hasActive
-                                    ? const Color(0xFFFF3B30)
-                                    : scheme.primary,
-                              ),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 3),
+                child: Row(
+                  children: [
+                    _iosBarButton(
+                      icon: CupertinoIcons.chevron_back,
+                      tooltip: 'Voltar',
+                      onTap: _canGoBack ? () => _controller?.goBack() : null,
+                    ),
+                    _iosBarButton(
+                      icon: CupertinoIcons.chevron_forward,
+                      tooltip: 'Avançar',
+                      onTap: _canGoForward
+                          ? () => _controller?.goForward()
+                          : null,
+                    ),
+                    Expanded(child: _buildIosAddressPill(scheme, isDark)),
+                    ListenableBuilder(
+                      listenable: DownloadManager.instance,
+                      builder: (_, _) {
+                        final tasks = DownloadManager.instance.tasks;
+                        return Stack(
+                          clipBehavior: Clip.none,
+                          alignment: Alignment.center,
+                          children: [
+                            _iosBarButton(
+                              icon: CupertinoIcons.tray_arrow_down,
+                              tooltip: 'Downloads',
+                              onTap: () => _onMenuSelected('downloads'),
                             ),
-                          ),
-                      ],
-                    );
-                  },
+                            if (tasks.isNotEmpty)
+                              Positioned(
+                                right: 7,
+                                top: 8,
+                                child: Container(
+                                  width: 8,
+                                  height: 8,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: DownloadManager.instance.hasActive
+                                        ? const Color(0xFFFF3B30)
+                                        : scheme.primary,
+                                  ),
+                                ),
+                              ),
+                          ],
+                        );
+                      },
+                    ),
+                    _iosBarButton(
+                      icon: CupertinoIcons.ellipsis_circle,
+                      tooltip: 'Menu',
+                      onTap: _showIosMenu,
+                    ),
+                  ],
                 ),
-                _iosBarButton(
-                  icon: CupertinoIcons.ellipsis_circle,
-                  tooltip: 'Menu',
-                  onTap: _showIosMenu,
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
     );
+  }
+
+  /// Agenda a captura da faixa inferior da página para o vidro da barra.
+  void _scheduleBarSnapshot([int delayMs = 150]) {
+    if (!Platform.isIOS) return;
+    _blurTimer?.cancel();
+    _blurTimer = Timer(Duration(milliseconds: delayMs), _captureBarSnapshot);
+  }
+
+  Future<void> _captureBarSnapshot() async {
+    if (!Platform.isIOS || !mounted || _capturingBlur) return;
+    final controller = _controller;
+    final box = _webViewKey.currentContext?.findRenderObject() as RenderBox?;
+    if (controller == null || box == null || !box.hasSize) return;
+    final size = box.size;
+    if (size.height < 160 || size.width < 40) return;
+    const stripHeight = 132.0;
+    _capturingBlur = true;
+    try {
+      final bytes = await controller.takeScreenshot(
+        screenshotConfiguration: ScreenshotConfiguration(
+          rect: InAppWebViewRect(
+            x: 0,
+            y: size.height - stripHeight,
+            width: size.width,
+            height: stripHeight,
+          ),
+          snapshotWidth: 320,
+          compressFormat: CompressFormat.JPEG,
+          quality: 45,
+        ),
+      );
+      if (bytes == null || bytes.isEmpty || !mounted) return;
+      final codec = await ui.instantiateImageCodec(bytes);
+      final frame = await codec.getNextFrame();
+      codec.dispose();
+      if (!mounted) {
+        frame.image.dispose();
+        return;
+      }
+      final old = _barSnapshot;
+      setState(() => _barSnapshot = frame.image);
+      if (old != null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) => old.dispose());
+      }
+    } catch (_) {
+      // Página ainda não pronta: mantém o último snapshot (ou o gradiente).
+    } finally {
+      _capturingBlur = false;
+    }
   }
 
   Widget _buildIosAddressPill(ColorScheme scheme, bool isDark) {
@@ -3487,7 +3645,7 @@ class _BrowserScreenState extends State<BrowserScreen>
       context: context,
       builder: (sheetContext) => CupertinoActionSheet(
         title: Text(
-          host.isEmpty ? 'TubeFetch' : host,
+          host.isEmpty ? 'FastSearchX' : host,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),
@@ -3745,23 +3903,46 @@ class _HistoryScreenState extends State<HistoryScreen> {
   List<HistoryEntry> get _entries => HistoryStore.instance.entries;
 
   Future<void> _confirmClear() async {
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Limpar histórico?'),
-        content: const Text('Todo o histórico de navegação será removido.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('Cancelar'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: const Text('Limpar'),
-          ),
-        ],
-      ),
-    );
+    final ok = Platform.isIOS
+        ? await showCupertinoDialog<bool>(
+            context: context,
+            builder: (dialogContext) => CupertinoAlertDialog(
+              title: const Text('Limpar histórico?'),
+              content: const Text(
+                'Todo o histórico de navegação será removido.',
+              ),
+              actions: [
+                CupertinoDialogAction(
+                  onPressed: () => Navigator.of(dialogContext).pop(false),
+                  child: const Text('Cancelar'),
+                ),
+                CupertinoDialogAction(
+                  isDestructiveAction: true,
+                  onPressed: () => Navigator.of(dialogContext).pop(true),
+                  child: const Text('Limpar'),
+                ),
+              ],
+            ),
+          )
+        : await showDialog<bool>(
+            context: context,
+            builder: (dialogContext) => AlertDialog(
+              title: const Text('Limpar histórico?'),
+              content: const Text(
+                'Todo o histórico de navegação será removido.',
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(dialogContext).pop(false),
+                  child: const Text('Cancelar'),
+                ),
+                FilledButton(
+                  onPressed: () => Navigator.of(dialogContext).pop(true),
+                  child: const Text('Limpar'),
+                ),
+              ],
+            ),
+          );
     if (ok == true) {
       await HistoryStore.instance.clear();
       if (mounted) setState(() {});
@@ -3771,6 +3952,68 @@ class _HistoryScreenState extends State<HistoryScreen> {
   @override
   Widget build(BuildContext context) {
     final entries = _entries;
+    if (Platform.isIOS) {
+      return CupertinoPageScaffold(
+        navigationBar: CupertinoNavigationBar(
+          middle: const Text('Histórico'),
+          trailing: entries.isEmpty
+              ? null
+              : CupertinoButton(
+                  padding: EdgeInsets.zero,
+                  onPressed: _confirmClear,
+                  child: const Icon(
+                    CupertinoIcons.delete,
+                    size: 22,
+                    color: CupertinoColors.systemRed,
+                  ),
+                ),
+        ),
+        child: SafeArea(
+          child: entries.isEmpty
+              ? const Center(child: Text('Nenhuma página visitada ainda.'))
+              : ListView.separated(
+                  padding: const EdgeInsets.only(bottom: 24),
+                  itemCount: entries.length,
+                  separatorBuilder: (_, _) => const SizedBox(height: 0.5),
+                  itemBuilder: (context, index) {
+                    final entry = entries[index];
+                    return CupertinoListTile(
+                      leading: const Icon(
+                        CupertinoIcons.compass,
+                        size: 22,
+                        color: CupertinoColors.systemBlue,
+                      ),
+                      title: Text(
+                        entry.title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      subtitle: Text(
+                        '${entry.url}\n${_formatTime(entry.time)}',
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(fontSize: 12),
+                      ),
+                      trailing: CupertinoButton(
+                        padding: EdgeInsets.zero,
+                        minimumSize: const Size(28, 28),
+                        onPressed: () {
+                          HistoryStore.instance.remove(entry.url);
+                          setState(() {});
+                        },
+                        child: const Icon(
+                          CupertinoIcons.xmark,
+                          size: 17,
+                          color: CupertinoColors.inactiveGray,
+                        ),
+                      ),
+                      onTap: () => widget.onOpen(entry.url),
+                    );
+                  },
+                ),
+        ),
+      );
+    }
     return Scaffold(
       appBar: AppBar(
         title: const Text('Histórico'),
@@ -4281,6 +4524,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _setDefaultBrowser() async {
+    if (Platform.isIOS) {
+      await _showIosDefaultBrowserInfo();
+      return;
+    }
     try {
       await kIntentChannel.invokeMethod('openDefaultBrowserSettings');
     } catch (_) {
@@ -4294,24 +4541,70 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
-  Future<void> _clearHistory() async {
-    final ok = await showDialog<bool>(
+  Future<void> _showIosDefaultBrowserInfo() {
+    return showCupertinoDialog<void>(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Limpar histórico?'),
-        content: const Text('Todo o histórico de navegação será removido.'),
+      builder: (dialogContext) => CupertinoAlertDialog(
+        title: const Text('Navegador padrão no iOS'),
+        content: const Text(
+          'O iOS não permite definir como navegador padrão um app instalado '
+          'fora da App Store. Apenas navegadores aprovados pela Apple '
+          '(Safari, Chrome, Firefox, Edge...) podem ocupar esse lugar.\n\n'
+          'No Android, o FastSearchX pode ser definido como navegador padrão: '
+          'Ajustes → Apps → Apps padrão → Navegador → FastSearchX.',
+        ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('Cancelar'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: const Text('Limpar'),
+          CupertinoDialogAction(
+            isDefaultAction: true,
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('Entendi'),
           ),
         ],
       ),
     );
+  }
+
+  Future<void> _clearHistory() async {
+    final ok = Platform.isIOS
+        ? await showCupertinoDialog<bool>(
+            context: context,
+            builder: (dialogContext) => CupertinoAlertDialog(
+              title: const Text('Limpar histórico?'),
+              content: const Text(
+                'Todo o histórico de navegação será removido.',
+              ),
+              actions: [
+                CupertinoDialogAction(
+                  onPressed: () => Navigator.of(dialogContext).pop(false),
+                  child: const Text('Cancelar'),
+                ),
+                CupertinoDialogAction(
+                  isDestructiveAction: true,
+                  onPressed: () => Navigator.of(dialogContext).pop(true),
+                  child: const Text('Limpar'),
+                ),
+              ],
+            ),
+          )
+        : await showDialog<bool>(
+            context: context,
+            builder: (dialogContext) => AlertDialog(
+              title: const Text('Limpar histórico?'),
+              content: const Text(
+                'Todo o histórico de navegação será removido.',
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(dialogContext).pop(false),
+                  child: const Text('Cancelar'),
+                ),
+                FilledButton(
+                  onPressed: () => Navigator.of(dialogContext).pop(true),
+                  child: const Text('Limpar'),
+                ),
+              ],
+            ),
+          );
     if (ok == true) {
       await HistoryStore.instance.clear();
       if (mounted) {
@@ -4323,6 +4616,187 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (Platform.isIOS) return _buildCupertinoSettings(context);
+    return _buildAndroidSettings(context);
+  }
+
+  // --- Configurações no estilo nativo do iOS (Cupertino) ---------------------
+
+  Widget _cupertinoIcon(IconData icon, Color color) {
+    return Container(
+      width: 29,
+      height: 29,
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(7),
+      ),
+      child: Icon(icon, size: 18, color: CupertinoColors.white),
+    );
+  }
+
+  Widget _buildCupertinoSettings(BuildContext context) {
+    final brightness = CupertinoTheme.of(context).brightness;
+    final isDark = brightness == Brightness.dark;
+    return CupertinoPageScaffold(
+      backgroundColor: isDark
+          ? const Color(0xFF000000)
+          : const Color(0xFFF2F2F7),
+      navigationBar: const CupertinoNavigationBar(
+        middle: Text('Configurações'),
+      ),
+      child: SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.only(top: 10, bottom: 32),
+          children: [
+            CupertinoListSection.insetGrouped(
+              header: const Text('TEMA'),
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
+                  child: CupertinoSlidingSegmentedControl<ThemeMode>(
+                    groupValue: _mode,
+                    backgroundColor: isDark
+                        ? const Color(0xFF1C1C1E)
+                        : const Color(0xFFE9E9EC),
+                    onValueChanged: (value) {
+                      if (value == null) return;
+                      setState(() => _mode = value);
+                      _apply();
+                    },
+                    children: const {
+                      ThemeMode.light: Padding(
+                        padding: EdgeInsets.symmetric(vertical: 6),
+                        child: Text('Claro', style: TextStyle(fontSize: 13)),
+                      ),
+                      ThemeMode.dark: Padding(
+                        padding: EdgeInsets.symmetric(vertical: 6),
+                        child: Text('Escuro', style: TextStyle(fontSize: 13)),
+                      ),
+                      ThemeMode.system: Padding(
+                        padding: EdgeInsets.symmetric(vertical: 6),
+                        child: Text('Sistema', style: TextStyle(fontSize: 13)),
+                      ),
+                    },
+                  ),
+                ),
+              ],
+            ),
+            CupertinoListSection.insetGrouped(
+              header: const Text('COR DO NAVEGADOR'),
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
+                  child: Wrap(
+                    spacing: 14,
+                    runSpacing: 14,
+                    children: [
+                      for (final color in _colors)
+                        GestureDetector(
+                          onTap: () {
+                            setState(() => _seed = color);
+                            _apply();
+                          },
+                          child: Container(
+                            width: 36,
+                            height: 36,
+                            decoration: BoxDecoration(
+                              color: color,
+                              shape: BoxShape.circle,
+                            ),
+                            child: _seed.toARGB32() == color.toARGB32()
+                                ? const Icon(
+                                    CupertinoIcons.check_mark,
+                                    size: 20,
+                                    color: CupertinoColors.white,
+                                  )
+                                : null,
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            CupertinoListSection.insetGrouped(
+              header: const Text('DADOS'),
+              children: [
+                CupertinoListTile(
+                  leading: _cupertinoIcon(
+                    CupertinoIcons.delete_left,
+                    const Color(0xFFFF3B30),
+                  ),
+                  title: const Text('Limpar histórico'),
+                  subtitle: const Text('Remove todas as páginas visitadas'),
+                  trailing: const CupertinoListTileChevron(),
+                  onTap: _clearHistory,
+                ),
+              ],
+            ),
+            CupertinoListSection.insetGrouped(
+              header: const Text('NAVEGADOR'),
+              children: [
+                CupertinoListTile(
+                  leading: _cupertinoIcon(
+                    CupertinoIcons.compass,
+                    const Color(0xFF007AFF),
+                  ),
+                  title: const Text('Navegador padrão'),
+                  subtitle: const Text(
+                    'O iOS não permite definir apps fora da App Store',
+                  ),
+                  trailing: const CupertinoListTileChevron(),
+                  onTap: _setDefaultBrowser,
+                ),
+                CupertinoListTile(
+                  leading: _cupertinoIcon(
+                    CupertinoIcons.folder,
+                    const Color(0xFFFF9500),
+                  ),
+                  title: const Text('Pastas de downloads'),
+                  subtitle: const Text(
+                    'Arquivos → No meu iPhone → FastSearchX',
+                  ),
+                ),
+              ],
+            ),
+            CupertinoListSection.insetGrouped(
+              header: const Text('SOBRE'),
+              children: [
+                CupertinoListTile(
+                  leading: _cupertinoIcon(
+                    CupertinoIcons.info,
+                    const Color(0xFF8E8E93),
+                  ),
+                  title: const Text('Versão'),
+                  subtitle: Text('$kAppVersion (iOS)'),
+                ),
+                CupertinoListTile(
+                  leading: _cupertinoIcon(
+                    CupertinoIcons.person,
+                    const Color(0xFF34C759),
+                  ),
+                  title: const Text('Desenvolvido por'),
+                  subtitle: const Text('SysArchX'),
+                ),
+                CupertinoListTile(
+                  leading: _cupertinoIcon(
+                    CupertinoIcons.link,
+                    const Color(0xFF5856D6),
+                  ),
+                  title: const Text('Repositório oficial'),
+                  subtitle: const Text('github.com/SysArchX/FastSearchX'),
+                  trailing: const CupertinoListTileChevron(),
+                  onTap: _openGitHub,
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAndroidSettings(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     return Scaffold(
       appBar: AppBar(title: const Text('Configurações')),
@@ -4408,7 +4882,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     leading: const Icon(Icons.public),
                     title: const Text('Definir como navegador padrão'),
                     subtitle: const Text(
-                      'Abra os ajustes do Android e escolha o TubeFetch',
+                      'Abra os ajustes do Android e escolha o FastSearchX',
                     ),
                     trailing: const Icon(Icons.open_in_new, size: 18),
                     onTap: _setDefaultBrowser,
@@ -4420,7 +4894,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   title: const Text('Pastas de downloads'),
                   subtitle: Text(
                     Platform.isIOS
-                        ? 'Arquivos → No meu iPhone → TubeFetch'
+                        ? 'Arquivos → No meu iPhone → FastSearchX'
                         : 'Outros: ${AppPaths.base}\n'
                               'Vídeos: ${AppPaths.videos}\n'
                               'Músicas: ${AppPaths.music}',
@@ -4457,7 +4931,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ListTile(
                   leading: const Icon(Icons.code),
                   title: const Text('Repositório oficial'),
-                  subtitle: const Text('github.com/SysArchX/tubefetch'),
+                  subtitle: const Text('github.com/SysArchX/FastSearchX'),
                   trailing: const Icon(Icons.open_in_new, size: 18),
                   onTap: _openGitHub,
                 ),
