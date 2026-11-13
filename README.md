@@ -55,6 +55,7 @@ O **FastSearchX** é um navegador livre com downloader integrado. Há duas vers�
 | **Android** | 2.0.0 | [`FastSearchX-2.0.0-armeabi-v7a.apk`](https://github.com/SysArchX/FastSearchX/releases/download/v2.0.0/FastSearchX-2.0.0-armeabi-v7a.apk) (69,4 MB) | Android 7.0+, aparelho 32 bits |
 | **Android** | 2.0.0 | [`FastSearchX-2.0.0-android.apk`](https://github.com/SysArchX/FastSearchX/releases/download/v2.0.0/FastSearchX-2.0.0-android.apk) (168 MB) | Android 7.0+, serve em qualquer aparelho |
 | **Linux x86_64** | 2.0.0 | [`fastsearchx_2.0.0_amd64.deb`](https://github.com/SysArchX/FastSearchX/releases/download/v2.0.0/fastsearchx_2.0.0_amd64.deb) (2,9 MB) | Debian/Ubuntu com Python 3.11+, GTK 3, WebKit2GTK 4.1 e ffmpeg |
+| **iOS** | 2.0.0 | [`FastSearchX-2.0.0-ios-unsigned.ipa`](https://github.com/SysArchX/FastSearchX/releases/download/v2.0.0/FastSearchX-2.0.0-ios-unsigned.ipa) (24 MB) | iOS/iPadOS 15+, **sem assinatura** (reassinar com seu Apple ID) |
 
 Todas as versões ficam na página de **[Releases](../../releases)**.
 
