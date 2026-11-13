@@ -53,7 +53,7 @@ O **FastSearchX** é um navegador livre com downloader integrado. Há duas vers�
 | --- | :---: | --- | --- |
 | **Android** | 2.0.0 | [`FastSearchX-2.0.0-arm64-v8a.apk`](https://github.com/SysArchX/FastSearchX/releases/download/v2.0.0/FastSearchX-2.0.0-arm64-v8a.apk) (48,5 MB) | Android 7.0 (API 24)+, celular 64 bits — **recomendado** |
 | **Android** | 2.0.0 | [`FastSearchX-2.0.0-armeabi-v7a.apk`](https://github.com/SysArchX/FastSearchX/releases/download/v2.0.0/FastSearchX-2.0.0-armeabi-v7a.apk) (69,4 MB) | Android 7.0+, aparelho 32 bits |
-| **Android** | 2.0.0 | [`FastSearchX-2.0.0-android.apk`](https://github.com/SysArchX/FastSearchX/releases/download/v2.0.0/FastSearchX-2.0.0-android.apk) (~120 MB) | Android 7.0+, serve em qualquer aparelho |
+| **Android** | 2.0.0 | [`FastSearchX-2.0.0-android.apk`](https://github.com/SysArchX/FastSearchX/releases/download/v2.0.0/FastSearchX-2.0.0-android.apk) (168 MB) | Android 7.0+, serve em qualquer aparelho |
 | **Linux x86_64** | 2.0.0 | [`fastsearchx_2.0.0_amd64.deb`](https://github.com/SysArchX/FastSearchX/releases/download/v2.0.0/fastsearchx_2.0.0_amd64.deb) (2,9 MB) | Debian/Ubuntu com Python 3.11+, GTK 3, WebKit2GTK 4.1 e ffmpeg |
 
 Todas as versões ficam na página de **[Releases](../../releases)**.
